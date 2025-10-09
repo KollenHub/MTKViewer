@@ -1,0 +1,6 @@
+build/
+output/
+.vscode/
+.vs/
+/bin/
+PackagePath.config
