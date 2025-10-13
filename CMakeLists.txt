@@ -15,11 +15,17 @@ find_package(Qt5 CONFIG REQUIRED COMPONENTS Core Widgets)
 
 find_package(DCMTK CONFIG REQUIRED)
 
+if(TARGET dcmdata)
+    message("Exsit DCMTK")
+endif()
+
 find_package(spdlog CONFIG REQUIRED)
 
-find_package(vtk CONFIG REQUIRED OPTIONAL_COMPONENTS
+find_package(VTK REQUIRED CONFIG COMPONENTS
     CommonCore
-    )
+    RenderingOpenGL2
+    GUISupportQt
+)
 
 
 set(CMAKE_CXX_STANDARD 17)
@@ -38,12 +44,12 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt5::Core
     Qt5::Widgets
-    dcmdata
-    dcmjpeg
-    dcmimgle
-    dcmimage
+    DCMTK::dcmdata
+    DCMTK::dcmjpeg
+    DCMTK::dcmimgle
+    DCMTK::dcmimage
     spdlog::spdlog
-    VTK::CommonCore
+    ${VTK_LIBRARIES}
 )
 target_link_directories(${PROJECT_NAME} PRIVATE src)
 
@@ -64,9 +70,8 @@ else()
     list(APPEND BINARIES ${SPDLOG_BINARIES})
 endif()
 
-get_nth_parent_directory(${vtk_DIR} 3 VTK_ROOT)
+get_nth_parent_directory(${VTK_DIR} 3 VTK_ROOT)
 set(VTK_BIN ${VTK_ROOT}/bin)
-
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     file(GLOB VTK_BINARIES "${VTK_BIN}/*d.dll")
     list(APPEND BINARIES ${VTK_BINARIES})
