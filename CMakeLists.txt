@@ -37,7 +37,7 @@ set(CMAKE_AUTORCC TRUE)
 #包含当前生成的路径
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-file(GLOB SOURCES "src/*.h" "src/*.qrc" "src/*.cpp" "src/*.hpp" "src/*.ui")
+file(GLOB_RECURSE SOURCES "src/*.h" "src/*.qrc" "src/*.cpp" "src/*.hpp" "src/*.ui")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -52,6 +52,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${VTK_LIBRARIES}
 )
 target_link_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 
 set(BINARIES "")
 #获取binary

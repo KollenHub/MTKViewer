@@ -12,7 +12,7 @@ private:
     {
         auto console_sink = spdlog::make_platform_sink<spdlog::sinks::stdout_color_sink_mt>();
 
-        m_Logger = std::make_shared<spdlog::logger>("console", std::move(console_sink));
+        m_Logger = std::make_shared<spdlog::logger>("MTK-Viewer", std::move(console_sink));
     }
 
 public:
