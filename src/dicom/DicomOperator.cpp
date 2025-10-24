@@ -72,4 +72,7 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
             }
         }
     }
+
+    return dcmData;
 }
+

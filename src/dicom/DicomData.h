@@ -23,6 +23,8 @@ public:
 
     void AddDataSetCardinality(const DicomProperty &property)
     {
+        if (property.m_TagName == "PixelData")
+            return;
         m_DataSetCardinality.push_back(property);
     }
 
@@ -30,6 +32,8 @@ public:
     {
         m_OtherProperty.push_back(property);
     }
+
+    void Print() const;
 
     ~DicomData();
 };

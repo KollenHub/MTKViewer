@@ -2,11 +2,17 @@ cmake_minimum_required(VERSION 3.20)
 
 project(mtkViewer)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+ 
+
 include(cmake/package.cmake)
 include(cmake/directory.cmake)
 
 if(MSVC)
-    add_compile_options("/utf-8")
+     add_compile_options("/utf-8" "/std:c++17")
+     add_compile_options("/Zc:__cplusplus")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
@@ -28,8 +34,6 @@ find_package(VTK REQUIRED CONFIG COMPONENTS
 )
 
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 set(CMAKE_AUTOMOC TRUE)
 set(CMAKE_AUTOUIC TRUE)

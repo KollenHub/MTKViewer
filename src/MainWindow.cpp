@@ -7,6 +7,9 @@
 #include <vtkActor.h>
 #include <vtkRenderWindowInteractor.h>
 #include "Logger.h"
+#include "dicom/DicomOperator.h"
+#include <QFileDialog>
+#include <QDebug>
 void MainWindow::InitVTKWidget()
 {
     QVTKOpenGLNativeWidget *widget = new QVTKOpenGLNativeWidget(this);
@@ -76,7 +79,21 @@ QAction *MainWindow::FindAction(const QList<QAction *> actions, const QString &n
 }
 void MainWindow::OpenDicom()
 {
-    Logger::info("打开DICOM文件");
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "选择Dicom文件",
+        "",
+        "DICOM文件 (*.dcm)");
+    if (!fileName.isEmpty())
+    {
+        // 处理选中的文件
+        qDebug() << "选中的文件:" << fileName;
+        std::shared_ptr<DicomData> dicomData = DicomOperator::OpenDicomFile(fileName);
+
+        dicomData->Print();
+
+
+    }
 }
 void MainWindow::CloseDicom()
 {

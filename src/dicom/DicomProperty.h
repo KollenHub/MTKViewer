@@ -1,8 +1,10 @@
 #pragma once
 #include <QString>
 #include <dcmtk/dcmdata/dctk.h>
+#include "Logger.h"
 class DicomProperty
 {
+    friend class DicomData;
 private:
     QString m_TagName;
 
@@ -44,5 +46,10 @@ public:
         {
             m_Value = value.c_str();
         }
+    }
+
+    void Print() const
+    {
+        Logger::info(QString("TagName: %1, VRName: %2, XTagName: %3, Length: %4, Value: %5").arg(m_TagName).arg(m_VRName).arg(m_XTagName).arg(m_Length).arg(m_Value).toStdString().c_str());
     }
 };
