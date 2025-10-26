@@ -108,21 +108,21 @@ QMenu::indicator:checked {
      </layout>
     </item>
     <item>
-     <widget class="QTableView" name="propertiesTable">
+     <widget class="QTreeView" name="propertiesTree">
       <property name="minimumSize">
        <size>
-        <width>300</width>
+        <width>400</width>
         <height>0</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>300</width>
+        <width>400</width>
         <height>16777215</height>
        </size>
       </property>
       <property name="styleSheet">
-       <string notr="true">QTableView {
+       <string notr="true">QTreeView {
     background-color: #2d2d2d;
     alternate-background-color: #252525;
     color: #e0e0e0;
@@ -130,7 +130,7 @@ QMenu::indicator:checked {
     border: 1px solid #404040;
 }
 
-QTableView::item:selected {
+QTreeView::item:selected {
     background-color: #3a6ea5;
     color: #ffffff;
 }

@@ -29,12 +29,12 @@ find_package(spdlog CONFIG REQUIRED)
 
 find_package(VTK REQUIRED CONFIG COMPONENTS
     CommonCore
+    RenderingCore
     RenderingOpenGL2
     GUISupportQt
+    InteractionStyle
 )
-
-
-
+message("VTK_LIBRARIES: ${VTK_LIBRARIES}")
 set(CMAKE_AUTOMOC TRUE)
 set(CMAKE_AUTOUIC TRUE)
 set(CMAKE_AUTORCC TRUE)
@@ -61,11 +61,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE src)
 set(BINARIES "")
 #获取binary
 get_nth_parent_directory(${DCMTK_DIR} MTK_ROOT)
-set(MTK_BIN ${MTK_ROOT}/bin/${CMAKE_BUILD_TYPE})
+message(STATUS "MTK_ROOT: ${MTK_ROOT}")
+# set(MTK_BIN ${MTK_ROOT}/bin/${CMAKE_BUILD_TYPE})
+set(MTK_BIN ${MTK_ROOT}/bin)
 file(GLOB MTK_BINARIES "${MTK_BIN}/*.dll")
 list(APPEND BINARIES ${MTK_BINARIES})
 
 get_nth_parent_directory(${spdlog_DIR} 3 SPDLOG_ROOT)
+message(STATUS "SPDLOG_ROOT: ${SPDLOG_ROOT}")
 set(SPDLOG_BIN ${SPDLOG_ROOT}/bin)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     file(GLOB SPDLOG_BINARIES "${SPDLOG_BIN}/*.dll")
@@ -76,6 +79,7 @@ else()
 endif()
 
 get_nth_parent_directory(${VTK_DIR} 3 VTK_ROOT)
+message(STATUS "VTK_ROOT: ${VTK_ROOT}")
 set(VTK_BIN ${VTK_ROOT}/bin)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     file(GLOB VTK_BINARIES "${VTK_BIN}/*d.dll")
@@ -84,6 +88,7 @@ else()
     file(GLOB VTK_BINARIES "${VTK_BIN}/*[^d].dll")
     list(APPEND BINARIES ${VTK_BINARIES})
 endif()
+
 
 #判断
 if(NOT EXISTS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/spdlog.dll" AND NOT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/spdlogd.dll")

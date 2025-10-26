@@ -31,11 +31,30 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
     }
 
     auto dataSet = fileFormat.getDataset();
-    if (!dataSet)
+    if (!dataSet && !dataSet->isEmpty())
     {
         Logger::error("data set is empty");
         return nullptr;
     }
+
+    if (dataSet->tagExists(DCM_PixelData))
+    {
+        Logger::info("Pixel data exists");
+    }
+
+    Uint16 rows, cols;
+    if (dataSet->findAndGetUint16(DCM_Rows, rows).good() &&
+        dataSet->findAndGetUint16(DCM_Columns, cols).good())
+    {
+        Logger::info("Image size: {} x {}", rows, cols);
+    }
+    else
+    {
+        Logger::error("Can't get image size");
+        return nullptr;
+    }
+
+    dcmData->setImage(dataSet);
 
     auto dataSetCardinality = dataSet->card();
     for (int i = 0; i < dataSetCardinality; ++i)
@@ -75,4 +94,3 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
 
     return dcmData;
 }
-

@@ -44,8 +44,33 @@ public:
         auto con = element->getOFStringArray(value);
         if (con.good())
         {
-            m_Value = value.c_str();
+            m_Value =QString::fromLocal8Bit(value.c_str());
         }
+    }
+
+    const QString &tagName() const
+    {
+        return m_TagName;
+    }
+
+    const QString &vrName() const
+    {
+        return m_VRName;
+    }
+
+    const QString &xTagName() const
+    {
+        return m_XTagName;
+    }
+
+    int length() const
+    {
+        return m_Length;
+    }
+
+    const QString &value() const
+    {
+        return m_Value;
     }
 
     void Print() const

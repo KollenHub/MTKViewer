@@ -10,6 +10,78 @@
 #include "dicom/DicomOperator.h"
 #include <QFileDialog>
 #include <QDebug>
+#include <QStandardItemModel>
+#include "vtkUtils/vtkRendererUtils.h"
+#include <vtkBMPReader.h>
+#include <vtkInteractorStyleImage.h>
+#include <QLayoutItem>
+#include <vtkRendererCollection.h>
+
+void MainWindow::SetTableViewData()
+{
+    if (m_DicomData != nullptr)
+    {
+        // 获取treeview的model
+        QStandardItemModel *model = qobject_cast<QStandardItemModel *>(m_PropsTree->model());
+        model->removeRows(0, model->rowCount());
+
+        QStandardItem *datasetItem = new QStandardItem("DataSet");
+        model->setItem(0, 0, datasetItem);
+        for (auto &tag : m_DicomData->GetDataSetCardinality())
+        {
+            QStandardItem *item1 = new QStandardItem(tag.xTagName());
+            QStandardItem *item2 = new QStandardItem(tag.tagName());
+            // QStandardItem *item3 = new QStandardItem(tag.vrName());
+            // QStandardItem *item4 = new QStandardItem(QString::number(tag.length()));
+            QStandardItem *item3 = new QStandardItem(tag.value());
+            datasetItem->appendRow(QList<QStandardItem *>{item1, item2, item3});
+        }
+
+        QStandardItem *metaInfoItem = new QStandardItem("MetaInfo");
+        model->setItem(1, 0, metaInfoItem);
+        for (auto &tag : m_DicomData->GetMetaInfoCardinality())
+        {
+            QStandardItem *item1 = new QStandardItem(tag.xTagName());
+            QStandardItem *item2 = new QStandardItem(tag.tagName());
+            // QStandardItem *item3 = new QStandardItem(tag.vrName());
+            // QStandardItem *item4 = new QStandardItem(QString::number(tag.length()));
+            QStandardItem *item3 = new QStandardItem(tag.value());
+            metaInfoItem->appendRow(QList<QStandardItem *>{item1, item2, item3});
+        }
+
+        QStandardItem *otherItem = new QStandardItem("Other");
+        model->setItem(1, 0, otherItem);
+        for (auto &tag : m_DicomData->GetMetaInfoCardinality())
+        {
+            QStandardItem *item1 = new QStandardItem(tag.xTagName());
+            QStandardItem *item2 = new QStandardItem(tag.tagName());
+            // QStandardItem *item3 = new QStandardItem(tag.vrName());
+            // QStandardItem *item4 = new QStandardItem(QString::number(tag.length()));
+            QStandardItem *item3 = new QStandardItem(tag.value());
+            otherItem->appendRow(QList<QStandardItem *>{item1, item2, item3});
+        }
+
+        m_PropsTree->expandAll();
+    }
+}
+void MainWindow::ResetImageData()
+{
+    vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
+    vtkRendererUtils::AddImage(firstRenderer, m_DicomData->GetImageData());
+    firstRenderer->ResetCamera();
+    m_RendererWindow->Render();
+
+    // QLayoutItem *item = ui->vtkViewerContainer->itemAt(0);
+    // if (item)
+    // {
+    //     QWidget *child = item->widget();
+    //     QVTKOpenGLNativeWidget *vtkWidget = qobject_cast<QVTKOpenGLNativeWidget *>(child);
+    //     if (vtkWidget)
+    //     {
+    //         vtkWidget->renderWindow()->Render();
+    //     }
+    // }
+}
 void MainWindow::InitVTKWidget()
 {
     QVTKOpenGLNativeWidget *widget = new QVTKOpenGLNativeWidget(this);
@@ -20,36 +92,50 @@ void MainWindow::InitVTKWidget()
     this->ui->vtkViewerContainer->setSpacing(0);
 
     // 关联VTK渲染窗口
-    vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
-    widget->setRenderWindow(renderWindow);
+    m_RendererWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+    widget->setRenderWindow(m_RendererWindow);
 
-    m_Renderer = vtkSmartPointer<vtkRenderer>::New();
-    m_Renderer->SetBackground(0.117, 0.117, 0.117);
+    vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+    renderer->SetBackground(0.177, 0.177, 0.177);
 
+    // Qt内部已经创建了一个vtkRenderWindowInteractor
+    // 可以设置，但是不能调用自带的Initialize以及对应的Start
+    vtkSmartPointer<vtkRenderWindowInteractor> interactor = m_RendererWindow->GetInteractor();
+    vtkSmartPointer<vtkInteractorStyleImage> style = vtkSmartPointer<vtkInteractorStyleImage>::New();
+    interactor->SetInteractorStyle(style);
+    m_RendererWindow->SetInteractor(interactor);
     // 添加到渲染窗口
-    renderWindow->AddRenderer(m_Renderer);
+    m_RendererWindow->AddRenderer(renderer);
+    m_RendererWindow->Render();
 
-    renderWindow->Render();
-    this->resize(1000, 800);
+    // interactor->Initialize();
+    // interactor->Start();
 }
 void MainWindow::BindingMenus()
 {
-    BindingAction("打开", std::bind(&MainWindow::OpenDicom, this));
-    BindingAction("关闭文件", std::bind(&MainWindow::CloseDicom, this));
-    BindingAction("退出程序", std::bind(&MainWindow::Exit, this));
+    auto openConnection = BindingAction("打开", std::bind(&MainWindow::OpenDicom, this));
+    auto closeConnection = BindingAction("关闭文件", std::bind(&MainWindow::CloseDicom, this));
+    auto exitConnection = BindingAction("退出程序", std::bind(&MainWindow::Exit, this));
+    m_Connections.push_back(openConnection);
+    m_Connections.push_back(closeConnection);
+    m_Connections.push_back(exitConnection);
 }
-void MainWindow::UnbindingMenus()
+
+vtkSmartPointer<vtkRenderer> MainWindow::GetRenderByIndex(int index)
 {
+    return m_RendererWindow->GetRenderers()->GetNumberOfItems() > index ? dynamic_cast<vtkRenderer *>(m_RendererWindow->GetRenderers()->GetItemAsObject(index)) : nullptr;
 }
-void MainWindow::BindingAction(const QString &name, std::function<void()> func)
+
+QMetaObject::Connection MainWindow::BindingAction(const QString &name, std::function<void()> func)
 {
     QAction *action = FindAction(name);
     if (action != nullptr)
     {
         Logger::info("找到菜单项：{}", action->text().toStdString());
-        connect(action, &QAction::triggered, this, func);
+        return connect(action, &QAction::triggered, this, func);
     }
 }
+
 QAction *MainWindow::FindAction(const QString &name)
 {
     QList<QAction *> actions = ui->menubar->actions();
@@ -88,11 +174,11 @@ void MainWindow::OpenDicom()
     {
         // 处理选中的文件
         qDebug() << "选中的文件:" << fileName;
-        std::shared_ptr<DicomData> dicomData = DicomOperator::OpenDicomFile(fileName);
-
-        dicomData->Print();
-
-
+        m_DicomData = DicomOperator::OpenDicomFile(fileName);
+        SetTableViewData();
+        // 添加图片
+        ResetImageData();
+        m_DicomData->Print();
     }
 }
 void MainWindow::CloseDicom()
@@ -107,7 +193,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
-    m_PropsTable = ui->propertiesTable;
+    m_PropsTree = ui->propertiesTree;
+
+    // 设置表头
+    QStandardItemModel *model = new QStandardItemModel(this);
+
+    model->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
+    // 设置表格内容
+    m_PropsTree->setModel(model);
+
+    m_PropsTree->expandAll();
 
     InitVTKWidget();
 
@@ -117,4 +212,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 MainWindow::~MainWindow()
 {
+    // 解除函数绑定
+
+    for (auto &conn : m_Connections)
+    {
+        disconnect(conn);
+    }
 }
