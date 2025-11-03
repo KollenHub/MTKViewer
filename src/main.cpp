@@ -1,11 +1,11 @@
 #include <iostream>
 #include <QApplication>
-#include "MainWindow.h"
+#include "NewWindow.h"
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    MainWindow win;
+    NewWindow win;
     win.show();
     app.exec();
     return 0;
