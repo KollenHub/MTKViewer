@@ -6,7 +6,6 @@
 
 void vtkRendererUtils::AddImage(vtkSmartPointer<vtkRenderer> renderer, vtkSmartPointer<vtkImageData> image)
 {
-
     //Y轴翻转
     vtkSmartPointer<vtkImageFlip> flip = vtkSmartPointer<vtkImageFlip>::New();
     flip->SetInputData(image);

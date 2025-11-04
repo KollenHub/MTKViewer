@@ -96,8 +96,8 @@ void NewWindow::InitVTKWidget()
     widget->setRenderWindow(m_RendererWindow);
 
     vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-    // renderer->SetBackground(0.177, 0.177, 0.177);
-    renderer->SetBackground(1,0,0);
+    renderer->SetBackground(0.177, 0.177, 0.177);
+    // renderer->SetBackground(1, 1, 0);
 
     // Qt内部已经创建了一个vtkRenderWindowInteractor
     // 可以设置，但是不能调用自带的Initialize以及对应的Start
@@ -194,11 +194,7 @@ NewWindow::NewWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::NewWindo
 {
     ui->setupUi(this);
 
-    InitVTKWidget();
-
-    ui->splitter->setStretchFactor(0, 1);
-    ui->splitter->setStretchFactor(1, 2);
-    ui->splitter->setStretchFactor(2, 1);
+    // InitVTKWidget();
 
     // 设置表头
     // QStandardItemModel *model = new QStandardItemModel(this);

@@ -85,6 +85,9 @@ QMenu::indicator:checked {
 </string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">background-color:#2d2d30;</string>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <property name="spacing">
      <number>0</number>
@@ -117,6 +120,18 @@ background-color: rgb(125,125,125);
        <number>1</number>
       </property>
       <widget class="QTreeView" name="ProjectTree">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(37, 37, 38);</string>
        </property>
@@ -125,6 +140,18 @@ background-color: rgb(125,125,125);
        <layout class="QHBoxLayout" name="vtkContainer"/>
       </widget>
       <widget class="QTabWidget" name="tagTab">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="styleSheet">
         <string notr="true">/* 整体背景 */
 QWidget {
@@ -149,12 +176,6 @@ QTabBar::tab {
     border-top-right-radius: 4px;
     margin-right: 2px;
 }
-
-QTabWidget::tab-bar
-{
-   width:400px;
-}
-
 
 QTabBar::tab:hover {
     background-color: #3e3e42;
@@ -243,7 +264,14 @@ QScrollBar::handle:horizontal:hover {
           <number>0</number>
          </property>
          <item>
-          <widget class="QTableView" name="patientTagTable"/>
+          <widget class="QTableView" name="patientTagTable">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
