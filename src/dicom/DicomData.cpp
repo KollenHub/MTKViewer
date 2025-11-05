@@ -9,22 +9,15 @@ DicomData::DicomData()
 
 void DicomData::setImage(DcmDataset *dataset)
 {
-    DcmDataset *copy = static_cast<DcmDataset *>(dataset->clone());
-    m_ImageData = std::shared_ptr<DcmDataset>(copy);
-}
-
-const vtkSmartPointer<vtkImageData> DicomData::GetImageData() const
-{
-
     DJDecoderRegistration::registerCodecs();
 
-    E_TransferSyntax transferSyntax = m_ImageData->getOriginalXfer();
-    DicomImage image(m_ImageData.get(), transferSyntax);
+    E_TransferSyntax transferSyntax = dataset->getOriginalXfer();
+    DicomImage image(dataset, transferSyntax);
 
     if (image.getStatus() != EIS_Normal)
     {
         Logger::error("Error: cannot load image ({})", DicomImage::getString(image.getStatus()));
-        return nullptr;
+        return;
     }
 
     image.setMinMaxWindow(); // 自动窗口调整
@@ -42,19 +35,22 @@ const vtkSmartPointer<vtkImageData> DicomData::GetImageData() const
     if (!pixelData)
     {
         Logger::error("Error: cannot get pixel data");
-        return nullptr;
+        return;
     }
 
     // 拷贝到 VTK
-    vtkSmartPointer<vtkImageData> vtkImg = vtkSmartPointer<vtkImageData>::New();
-    vtkImg->SetExtent(0, width - 1, 0, height - 1, 0, 0);
-    vtkImg->AllocateScalars(VTK_UNSIGNED_CHAR, numComponents);
+    m_vtkImageData = vtkSmartPointer<vtkImageData>::New();
+    m_vtkImageData->SetExtent(0, width - 1, 0, height - 1, 0, 0);
+    m_vtkImageData->AllocateScalars(VTK_UNSIGNED_CHAR, numComponents);
 
-    unsigned char *vtkPtr = static_cast<unsigned char *>(vtkImg->GetScalarPointer());
+    unsigned char *vtkPtr = static_cast<unsigned char *>(m_vtkImageData->GetScalarPointer());
     size_t bytes = static_cast<size_t>(width) * height * numComponents;
     memcpy(vtkPtr, pixelData, bytes);
+}
 
-    return vtkImg;
+const vtkSmartPointer<vtkImageData> DicomData::GetImageData() const
+{
+    return m_vtkImageData;
 }
 
 void DicomData::Print() const
@@ -83,9 +79,5 @@ void DicomData::Print() const
 
 DicomData::~DicomData()
 {
-    if (m_ImageData)
-    {
-        // delete m_ImageData;
-        // m_ImageData = nullptr;
-    }
+
 }

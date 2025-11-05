@@ -23,13 +23,6 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
 
     auto dcmData = std::make_shared<DicomData>();
 
-    auto metaInfoCardinality = metaInfo->card();
-    for (int i = 0; i < metaInfoCardinality; ++i)
-    {
-        auto element = metaInfo->getElement(i);
-        dcmData->AddMetaInfoCardinality(DicomProperty(element));
-    }
-
     auto dataSet = fileFormat.getDataset();
     if (!dataSet && !dataSet->isEmpty())
     {
@@ -55,6 +48,13 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
     }
 
     dcmData->setImage(dataSet);
+
+    auto metaInfoCardinality = metaInfo->card();
+    for (int i = 0; i < metaInfoCardinality; ++i)
+    {
+        auto element = metaInfo->getElement(i);
+        dcmData->AddMetaInfoCardinality(DicomProperty(element));
+    }
 
     auto dataSetCardinality = dataSet->card();
     for (int i = 0; i < dataSetCardinality; ++i)
@@ -91,6 +91,5 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
             }
         }
     }
-
     return dcmData;
 }

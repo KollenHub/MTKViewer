@@ -7,7 +7,7 @@
 class DicomData
 {
 private:
-    std::shared_ptr<DcmDataset> m_ImageData;
+    vtkSmartPointer<vtkImageData> m_vtkImageData;
 
     std::vector<DicomProperty> m_MetaInfoCardinality;
 
@@ -20,25 +20,24 @@ public:
 
     void AddMetaInfoCardinality(const DicomProperty &property)
     {
-        m_MetaInfoCardinality.push_back(property);
+        if (property.isValid())
+            m_MetaInfoCardinality.push_back(property);
     }
 
     void AddDataSetCardinality(const DicomProperty &property)
     {
-        if (property.m_TagName == "PixelData")
-        {
-            return;
-        }
-        m_DataSetCardinality.push_back(property);
+        if (property.isValid())
+            m_DataSetCardinality.push_back(property);
     }
 
     void AddOtherProperty(const DicomProperty &property)
     {
-        m_OtherProperty.push_back(property);
+        if (property.isValid())
+            m_OtherProperty.push_back(property);
     }
 
     void setImage(DcmDataset *dataset);
-   
+
     const vtkSmartPointer<vtkImageData> GetImageData() const;
 
     const std::vector<DicomProperty> &GetMetaInfoCardinality() const

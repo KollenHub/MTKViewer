@@ -2,9 +2,11 @@
 #include <QString>
 #include <dcmtk/dcmdata/dctk.h>
 #include "Logger.h"
+#include "Timer.h"
 class DicomProperty
 {
     friend class DicomData;
+
 private:
     QString m_TagName;
 
@@ -29,6 +31,11 @@ public:
 
         auto tag = element->getTag();
 
+        if (strcmp(tag.getTagName(), "PixelData") == 0)
+        {
+            return;
+        }
+
         auto vr = DcmVR(element->getVR());
 
         m_Length = element->getLength();
@@ -44,8 +51,10 @@ public:
         auto con = element->getOFStringArray(value);
         if (con.good())
         {
-            m_Value =QString::fromLocal8Bit(value.c_str());
+            m_Value = QString::fromLocal8Bit(value.c_str());
         }
+
+        Logger::info("hhh-->{}", m_TagName.toStdString().c_str());
     }
 
     const QString &tagName() const

@@ -134,6 +134,7 @@ QMetaObject::Connection MainWindow::BindingAction(const QString &name, std::func
         Logger::info("找到菜单项：{}", action->text().toStdString());
         return connect(action, &QAction::triggered, this, func);
     }
+    return QMetaObject::Connection();
 }
 
 QAction *MainWindow::FindAction(const QString &name)
