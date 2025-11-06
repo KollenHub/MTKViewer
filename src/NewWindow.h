@@ -14,7 +14,9 @@ private:
     vtkSmartPointer<vtkRenderWindow> m_RendererWindow;
     QList<QMetaObject::Connection> m_Connections;
     std::shared_ptr<DicomData> m_DicomData;
-    
+
+    QTableView *m_PatientTagTable;
+    QTableView *m_AllTagTable;
 
     void SetTableViewData();
 
@@ -23,6 +25,8 @@ private:
     void InitVTKWidget();
 
     void BindingMenus();
+
+    void InitEventBindings();
 
     vtkSmartPointer<vtkRenderer> GetRenderByIndex(int index);
 

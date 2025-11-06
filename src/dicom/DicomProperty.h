@@ -14,6 +14,8 @@ private:
 
     QString m_XTagName;
 
+    bool m_IsPatientTag;
+
     int m_Length;
 
     QString m_Value;
@@ -30,6 +32,8 @@ public:
             return;
 
         auto tag = element->getTag();
+
+        m_IsPatientTag = tag.getGroup() == 0x0010;
 
         if (strcmp(tag.getTagName(), "PixelData") == 0)
         {
@@ -70,6 +74,11 @@ public:
     const QString &xTagName() const
     {
         return m_XTagName;
+    }
+
+    bool isPatientTag() const
+    {
+        return m_IsPatientTag;
     }
 
     int length() const
