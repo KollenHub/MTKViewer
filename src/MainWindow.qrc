@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>assets/imgs/搜索.png</file>
+    <file>assets/imgs/关闭.png</file>
+  </qresource>
+</RCC>

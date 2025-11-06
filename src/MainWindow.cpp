@@ -22,46 +22,57 @@ void MainWindow::SetTableViewData()
     if (m_DicomData != nullptr)
     {
         // 获取treeview的model
-        QStandardItemModel *model = qobject_cast<QStandardItemModel *>(m_PropsTree->model());
-        model->removeRows(0, model->rowCount());
+        QStandardItemModel *allTagModel = qobject_cast<QStandardItemModel *>(m_AllTagTable->model());
+        allTagModel->removeRows(0, allTagModel->rowCount());
 
-        QStandardItem *datasetItem = new QStandardItem("DataSet");
-        model->setItem(0, 0, datasetItem);
+        QStandardItemModel *patientTagModel = qobject_cast<QStandardItemModel *>(m_PatientTagTable->model());
+        patientTagModel->removeRows(0, patientTagModel->rowCount());
+
         for (auto &tag : m_DicomData->GetDataSetCardinality())
         {
             QStandardItem *item1 = new QStandardItem(tag.xTagName());
             QStandardItem *item2 = new QStandardItem(tag.tagName());
-            // QStandardItem *item3 = new QStandardItem(tag.vrName());
-            // QStandardItem *item4 = new QStandardItem(QString::number(tag.length()));
             QStandardItem *item3 = new QStandardItem(tag.value());
-            datasetItem->appendRow(QList<QStandardItem *>{item1, item2, item3});
+            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+            if (tag.isPatientTag())
+            {
+                QStandardItem *item4 = new QStandardItem(tag.xTagName());
+                QStandardItem *item5 = new QStandardItem(tag.tagName());
+                QStandardItem *item6 = new QStandardItem(tag.value());
+                patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
+            }
         }
 
-        QStandardItem *metaInfoItem = new QStandardItem("MetaInfo");
-        model->setItem(1, 0, metaInfoItem);
         for (auto &tag : m_DicomData->GetMetaInfoCardinality())
         {
             QStandardItem *item1 = new QStandardItem(tag.xTagName());
             QStandardItem *item2 = new QStandardItem(tag.tagName());
-            // QStandardItem *item3 = new QStandardItem(tag.vrName());
-            // QStandardItem *item4 = new QStandardItem(QString::number(tag.length()));
             QStandardItem *item3 = new QStandardItem(tag.value());
-            metaInfoItem->appendRow(QList<QStandardItem *>{item1, item2, item3});
+            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+            if (tag.isPatientTag())
+            {
+                QStandardItem *item4 = new QStandardItem(tag.xTagName());
+                QStandardItem *item5 = new QStandardItem(tag.tagName());
+                QStandardItem *item6 = new QStandardItem(tag.value());
+                patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
+            }
         }
 
-        QStandardItem *otherItem = new QStandardItem("Other");
-        model->setItem(1, 0, otherItem);
         for (auto &tag : m_DicomData->GetMetaInfoCardinality())
         {
+
             QStandardItem *item1 = new QStandardItem(tag.xTagName());
             QStandardItem *item2 = new QStandardItem(tag.tagName());
-            // QStandardItem *item3 = new QStandardItem(tag.vrName());
-            // QStandardItem *item4 = new QStandardItem(QString::number(tag.length()));
             QStandardItem *item3 = new QStandardItem(tag.value());
-            otherItem->appendRow(QList<QStandardItem *>{item1, item2, item3});
+            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+            if (tag.isPatientTag())
+            {
+                QStandardItem *item4 = new QStandardItem(tag.xTagName());
+                QStandardItem *item5 = new QStandardItem(tag.tagName());
+                QStandardItem *item6 = new QStandardItem(tag.value());
+                patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
+            }
         }
-
-        m_PropsTree->expandAll();
     }
 }
 void MainWindow::ResetImageData()
@@ -70,26 +81,15 @@ void MainWindow::ResetImageData()
     vtkRendererUtils::AddImage(firstRenderer, m_DicomData->GetImageData());
     firstRenderer->ResetCamera();
     m_RendererWindow->Render();
-
-    // QLayoutItem *item = ui->vtkViewerContainer->itemAt(0);
-    // if (item)
-    // {
-    //     QWidget *child = item->widget();
-    //     QVTKOpenGLNativeWidget *vtkWidget = qobject_cast<QVTKOpenGLNativeWidget *>(child);
-    //     if (vtkWidget)
-    //     {
-    //         vtkWidget->renderWindow()->Render();
-    //     }
-    // }
 }
 void MainWindow::InitVTKWidget()
 {
     QVTKOpenGLNativeWidget *widget = new QVTKOpenGLNativeWidget(this);
 
-    ui->vtkViewerContainer->addWidget(widget);
+    ui->vtkContainer->addWidget(widget);
 
-    this->ui->vtkViewerContainer->setContentsMargins(0, 0, 0, 0);
-    this->ui->vtkViewerContainer->setSpacing(0);
+    this->ui->vtkContainer->setContentsMargins(0, 0, 0, 0);
+    this->ui->vtkContainer->setSpacing(0);
 
     // 关联VTK渲染窗口
     m_RendererWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
@@ -97,6 +97,7 @@ void MainWindow::InitVTKWidget()
 
     vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->SetBackground(0.177, 0.177, 0.177);
+    // renderer->SetBackground(1, 1, 0);
 
     // Qt内部已经创建了一个vtkRenderWindowInteractor
     // 可以设置，但是不能调用自带的Initialize以及对应的Start
@@ -107,9 +108,6 @@ void MainWindow::InitVTKWidget()
     // 添加到渲染窗口
     m_RendererWindow->AddRenderer(renderer);
     m_RendererWindow->Render();
-
-    // interactor->Initialize();
-    // interactor->Start();
 }
 void MainWindow::BindingMenus()
 {
@@ -119,6 +117,11 @@ void MainWindow::BindingMenus()
     m_Connections.push_back(openConnection);
     m_Connections.push_back(closeConnection);
     m_Connections.push_back(exitConnection);
+}
+
+void MainWindow::InitEventBindings()
+{
+    
 }
 
 vtkSmartPointer<vtkRenderer> MainWindow::GetRenderByIndex(int index)
@@ -179,7 +182,7 @@ void MainWindow::OpenDicom()
         SetTableViewData();
         // 添加图片
         ResetImageData();
-        m_DicomData->Print();
+        // m_DicomData->Print();
     }
 }
 void MainWindow::CloseDicom()
@@ -190,25 +193,43 @@ void MainWindow::Exit()
 {
     Logger::info("退出程序");
 }
+
+void SetTagTableAutoResize(QTableView * tableView)
+{
+    QHeaderView *header = tableView->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::ResizeToContents); // 前几列根据内容调整
+    header->setStretchLastSection(true);                         // 最后一列自动拉伸填充
+
+}
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow())
 {
     ui->setupUi(this);
 
-    m_PropsTree = ui->propertiesTree;
+    m_PatientTagTable = ui->patientTagTable;
+    m_AllTagTable = ui->allTagTable;
 
-    // 设置表头
-    QStandardItemModel *model = new QStandardItemModel(this);
-
-    model->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
+    // 设置病人信息表头
+    QStandardItemModel *patientModel = new QStandardItemModel(0, 3, m_PatientTagTable);
+    patientModel->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
     // 设置表格内容
-    m_PropsTree->setModel(model);
+    m_PatientTagTable->setModel(patientModel);
+    SetTagTableAutoResize(m_PatientTagTable);
 
-    m_PropsTree->expandAll();
+    // 设置所有信息表头
+    QStandardItemModel *allTagModel = new QStandardItemModel(0, 3, m_AllTagTable);
+    allTagModel->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
+    // 设置表格内容
+    m_AllTagTable->setModel(allTagModel);
+    SetTagTableAutoResize(m_AllTagTable);
 
     InitVTKWidget();
 
     // 绑定菜单
     BindingMenus();
+
+    // 初始化其他事件绑定
+    InitEventBindings();
 }
 
 MainWindow::~MainWindow()
