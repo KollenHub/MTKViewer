@@ -122,6 +122,7 @@ void MainWindow::BindingMenus()
 void MainWindow::InitEventBindings()
 {
     
+    
 }
 
 vtkSmartPointer<vtkRenderer> MainWindow::GetRenderByIndex(int index)

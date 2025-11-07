@@ -5,14 +5,14 @@ project(mtkViewer)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
- 
+
 
 include(cmake/package.cmake)
 include(cmake/directory.cmake)
 
 if(MSVC)
-     add_compile_options("/utf-8" "/std:c++17")
-     add_compile_options("/Zc:__cplusplus")
+    add_compile_options("/utf-8" "/std:c++17")
+    add_compile_options("/Zc:__cplusplus")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
@@ -41,22 +41,11 @@ set(CMAKE_AUTORCC TRUE)
 #包含当前生成的路径
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-file(GLOB_RECURSE SOURCES "src/*.h" "src/*.qrc" "src/*.cpp" "src/*.hpp" "src/*.ui")
+#添加子文件夹
+add_subdirectory(src/core)
+add_subdirectory(src/extension)
+add_subdirectory(src/app)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt5::Core
-    Qt5::Widgets
-    DCMTK::dcmdata
-    DCMTK::dcmjpeg
-    DCMTK::dcmimgle
-    DCMTK::dcmimage
-    spdlog::spdlog
-    ${VTK_LIBRARIES}
-)
-target_link_directories(${PROJECT_NAME} PRIVATE src)
-target_include_directories(${PROJECT_NAME} PRIVATE src)
 
 set(BINARIES "")
 #获取binary
@@ -89,7 +78,6 @@ else()
     list(APPEND BINARIES ${VTK_BINARIES})
 endif()
 
-
 #判断
 if(NOT EXISTS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/spdlog.dll" AND NOT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/spdlogd.dll")
     file(COPY ${BINARIES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE})
@@ -97,13 +85,3 @@ else()
     message("Exsit Binaries")
 endif()
 
-#QT依赖工具
-get_nth_parent_directory(${Qt5_DIR} 3 QT_ROOT)
-set(QT_DepExe "${QT_ROOT}/bin/windeployqt.exe")
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${QT_DepExe} "$<TARGET_FILE:${PROJECT_NAME}>")
-
-vtk_module_autoinit(
-    TARGETS ${PROJECT_NAME}
-    MODULES ${VTK_LIBRARIES}
-)
