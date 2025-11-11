@@ -1,10 +1,51 @@
+#include <QFileInfo>
 #include "DicomData.h"
-#include <Logger.h>
 #include <dcmtk/dcmimgle/dcmimage.h>
-#include "Logger.h"
+#include "core/Logger.h"
 #include <dcmtk/dcmjpeg/djdecode.h>
+const QString &DicomData::PatientName() const
+{
+    return m_PatientTags[0].value();
+}
+const QString &DicomData::StudyModality() const
+{
+    return m_PatientTags[10].value();
+}
+const QString &DicomData::SeriesDescription() const
+{
+    return m_PatientTags[11].value();
+}
+const QString &DicomData::PatientSex() const
+{
+    return m_PatientTags[3].value();
+}
+const QString &DicomData::FilePath() const
+{
+    return m_FilePath;
+}
+const QString &DicomData::FileName() const
+{
+    return m_FileName;
+}
+void DicomData::SetFilePath(const QString &filePath)
+{
+    m_FileName = QFileInfo(filePath).completeBaseName();
+    m_FilePath = filePath;
+}
 DicomData::DicomData()
 {
+    m_PatientTags.resize(CPATIENTTAGS.length(), DicomProperty());
+}
+
+void DicomData::AddTag(const DicomProperty &property)
+{
+    m_AllTags.push_back(property);
+    auto index = CPATIENTTAGS.indexOf(property.tagName());
+    Logger::debug("Tag: {} Value:{}", property.tagName().toStdString(), property.value().toStdString());
+    if (index != -1)
+    {
+        m_PatientTags[index] = property;
+    }
 }
 
 void DicomData::setImage(DcmDataset *dataset)
@@ -53,31 +94,19 @@ const vtkSmartPointer<vtkImageData> DicomData::GetImageData() const
     return m_vtkImageData;
 }
 
+const std::vector<DicomProperty> &DicomData::GetAllTags() const
+{
+    return m_AllTags;
+}
+
 void DicomData::Print() const
 {
-    Logger::warn("DicomData-->DataSet");
-    for (auto &property : m_DataSetCardinality)
+    for (auto &property : m_AllTags)
     {
         property.Print();
     }
-    Logger::info("=============================================================");
-    Logger::warn("DicomData-->MetaInfo");
-    for (auto &property : m_MetaInfoCardinality)
-    {
-        property.Print();
-    }
-    Logger::info("=============================================================");
-    Logger::warn("DicomData-->Other");
-
-    for (auto &property : m_OtherProperty)
-    {
-        property.Print();
-    }
-
-    Logger::info("=============================================================");
 }
 
 DicomData::~DicomData()
 {
-
 }

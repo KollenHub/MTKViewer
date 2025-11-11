@@ -1,20 +1,20 @@
 #pragma once
 #include <QString>
 #include <dcmtk/dcmdata/dctk.h>
-#include "Logger.h"
-#include "Timer.h"
+#include "core/Logger.h"
+#include "core/Timer.h"
 class DicomProperty
 {
     friend class DicomData;
 
 private:
+    QString m_GroupName;
+
     QString m_TagName;
 
     QString m_VRName;
 
     QString m_XTagName;
-
-    bool m_IsPatientTag;
 
     int m_Length;
 
@@ -25,6 +25,8 @@ private:
         return !m_Value.isEmpty();
     }
 
+    DicomProperty() = default;
+
 public:
     DicomProperty(DcmElement *element)
     {
@@ -33,7 +35,7 @@ public:
 
         auto tag = element->getTag();
 
-        m_IsPatientTag = tag.getGroup() == 0x0010;
+        m_GroupName = tag.getGroup();
 
         if (strcmp(tag.getTagName(), "PixelData") == 0)
         {
@@ -56,9 +58,9 @@ public:
         if (con.good())
         {
             m_Value = QString::fromLocal8Bit(value.c_str());
+            if (m_Value.isEmpty())
+                m_Value = "empty value";
         }
-
-        Logger::info("hhh-->{}", m_TagName.toStdString().c_str());
     }
 
     const QString &tagName() const
@@ -76,9 +78,14 @@ public:
         return m_XTagName;
     }
 
-    bool isPatientTag() const
+    const QString &groupName() const
     {
-        return m_IsPatientTag;
+        return m_GroupName;
+    }
+
+    const QString mergeGroupTagName() const
+    {
+        return QString("(%1,%2)").arg(m_GroupName).arg(m_XTagName);
     }
 
     int length() const

@@ -16,6 +16,7 @@ void SplitterManager::RestoreSplitterState(QSplitter *splitter, const QString &c
 
     if (state.isValid())
     {
+        qDebug() << "Restoring splitter state from:" << state.toString();
         splitter->restoreState(state.toByteArray());
         qDebug() << "Splitter state restored from:" << settings.fileName();
     }

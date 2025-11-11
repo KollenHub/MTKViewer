@@ -2,6 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/platform_sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 class Logger
 {
@@ -12,7 +13,14 @@ private:
     {
         auto console_sink = spdlog::make_platform_sink<spdlog::sinks::stdout_color_sink_mt>();
 
-        m_Logger = std::make_shared<spdlog::logger>("MTK-Viewer", std::move(console_sink));
+        auto file_sink = spdlog::make_platform_sink<spdlog::sinks::basic_file_sink_mt>("MTK-Viewer.log", true);
+
+        // 将两个sink放入一个vector中
+        std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
+
+        m_Logger = std::make_shared<spdlog::logger>("MTK-Viewer",sinks.begin(), sinks.end());
+
+        m_Logger->set_level(spdlog::level::trace);
     }
 
 public:

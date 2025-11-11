@@ -41,6 +41,9 @@ set(CMAKE_AUTORCC TRUE)
 #包含当前生成的路径
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+#添加全局include
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
+
 #添加子文件夹
 add_subdirectory(src/core)
 add_subdirectory(src/extension)

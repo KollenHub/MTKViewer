@@ -5,8 +5,8 @@
 #include <vtkImageData.h>
 #include "vtkUtils/vtkRendererUtils.h"
 #include <chrono>
-#include "Logger.h"
-#include "Timer.h"
+#include "core/Logger.h"
+#include "core/Timer.h"
 #include <dicom/DicomOperator.h>
 #include <vtkImageFlip.h>
 #include <vtkInteractorStyleImage.h>

@@ -242,10 +242,13 @@ background-color:#2d2d2d;
             <property name="styleSheet">
              <string notr="true">QTreeView {
     border: 0px solid #8a8a8a30;   
-    color: #333;                 
+    color: white;                 
     background-color: rgb(37, 37, 38);
 }</string>
             </property>
+            <attribute name="headerVisible">
+             <bool>false</bool>
+            </attribute>
            </widget>
           </item>
          </layout>

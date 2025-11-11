@@ -2,7 +2,7 @@
 #include <dcmtk/dcmdata/dctk.h>
 #include <dcmtk/dcmimgle/dcmimage.h>
 #include <dcmtk/dcmjpeg/djdecode.h>
-#include "Logger.h"
+#include "core/Logger.h"
 
 std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
 {
@@ -35,6 +35,9 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
         Logger::info("Pixel data exists");
     }
 
+    //路径赋值
+    dcmData->SetFilePath(filePath);
+
     Uint16 rows, cols;
     if (dataSet->findAndGetUint16(DCM_Rows, rows).good() &&
         dataSet->findAndGetUint16(DCM_Columns, cols).good())
@@ -53,14 +56,14 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
     for (int i = 0; i < metaInfoCardinality; ++i)
     {
         auto element = metaInfo->getElement(i);
-        dcmData->AddMetaInfoCardinality(DicomProperty(element));
+        dcmData->AddTag(DicomProperty(element));
     }
 
     auto dataSetCardinality = dataSet->card();
     for (int i = 0; i < dataSetCardinality; ++i)
     {
         auto element = dataSet->getElement(i);
-        dcmData->AddDataSetCardinality(DicomProperty(element));
+        dcmData->AddTag(DicomProperty(element));
         // printDcmElement(element, "***********************");
         if (element->isLeaf())
         {
@@ -75,7 +78,7 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
             {
                 break;
             }
-            dcmData->AddOtherProperty(DicomProperty(OFstatic_cast(DcmElement *, top)));
+            dcmData->AddTag(DicomProperty(OFstatic_cast(DcmElement *, top)));
             // printDcmElement(OFstatic_cast(DcmElement *, top), "##################");
 
             DcmObject *down = nullptr;
@@ -86,7 +89,7 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
                 {
                     break;
                 }
-                dcmData->AddOtherProperty(DicomProperty(OFstatic_cast(DcmElement *, down)));
+                dcmData->AddTag(DicomProperty(OFstatic_cast(DcmElement *, down)));
                 // printDcmElement(OFstatic_cast(DcmElement *, down), "$$$$$$$$$$$$$$");
             }
         }

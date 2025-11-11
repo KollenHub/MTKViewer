@@ -6,7 +6,7 @@
 #include <vtkRenderer.h>
 #include <vtkActor.h>
 #include <vtkRenderWindowInteractor.h>
-#include "Logger.h"
+#include "core/Logger.h"
 #include "dicom/DicomOperator.h"
 #include <QFileDialog>
 #include <QDebug>
@@ -16,71 +16,82 @@
 #include <vtkInteractorStyleImage.h>
 #include <QLayoutItem>
 #include <vtkRendererCollection.h>
+#include "extension/SplitterManager .h"
+
+// void MainWindow::DeleteProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo)
+// {
+//     auto it = std::find(m_Projects.begin(), m_Projects.end(), projectInfo);
+//     if (it != m_Projects.end())
+//     {
+//         m_Projects.erase(it);
+//         UpdateProjectTree(projectInfo, "delete");
+//     }
+// }
 
 void MainWindow::SetTableViewData()
 {
-    if (m_DicomData != nullptr)
-    {
-        // 获取treeview的model
-        QStandardItemModel *allTagModel = qobject_cast<QStandardItemModel *>(m_AllTagTable->model());
-        allTagModel->removeRows(0, allTagModel->rowCount());
+    // if (m_DicomData != nullptr)
+    // {
+    //     // 获取treeview的model
+    //     QStandardItemModel *allTagModel = qobject_cast<QStandardItemModel *>(m_AllTagTable->model());
+    //     allTagModel->removeRows(0, allTagModel->rowCount());
 
-        QStandardItemModel *patientTagModel = qobject_cast<QStandardItemModel *>(m_PatientTagTable->model());
-        patientTagModel->removeRows(0, patientTagModel->rowCount());
+    //     QStandardItemModel *patientTagModel = qobject_cast<QStandardItemModel *>(m_PatientTagTable->model());
+    //     patientTagModel->removeRows(0, patientTagModel->rowCount());
 
-        for (auto &tag : m_DicomData->GetDataSetCardinality())
-        {
-            QStandardItem *item1 = new QStandardItem(tag.xTagName());
-            QStandardItem *item2 = new QStandardItem(tag.tagName());
-            QStandardItem *item3 = new QStandardItem(tag.value());
-            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
-            if (tag.isPatientTag())
-            {
-                QStandardItem *item4 = new QStandardItem(tag.xTagName());
-                QStandardItem *item5 = new QStandardItem(tag.tagName());
-                QStandardItem *item6 = new QStandardItem(tag.value());
-                patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
-            }
-        }
+    //     for (auto &tag : m_DicomData->GetDataSetCardinality())
+    //     {
+    //         QStandardItem *item1 = new QStandardItem(tag.xTagName());
+    //         QStandardItem *item2 = new QStandardItem(tag.tagName());
+    //         QStandardItem *item3 = new QStandardItem(tag.value());
+    //         allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+    //         if (tag.isPatientTag())
+    //         {
+    //             QStandardItem *item4 = new QStandardItem(tag.xTagName());
+    //             QStandardItem *item5 = new QStandardItem(tag.tagName());
+    //             QStandardItem *item6 = new QStandardItem(tag.value());
+    //             patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
+    //         }
+    //     }
 
-        for (auto &tag : m_DicomData->GetMetaInfoCardinality())
-        {
-            QStandardItem *item1 = new QStandardItem(tag.xTagName());
-            QStandardItem *item2 = new QStandardItem(tag.tagName());
-            QStandardItem *item3 = new QStandardItem(tag.value());
-            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
-            if (tag.isPatientTag())
-            {
-                QStandardItem *item4 = new QStandardItem(tag.xTagName());
-                QStandardItem *item5 = new QStandardItem(tag.tagName());
-                QStandardItem *item6 = new QStandardItem(tag.value());
-                patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
-            }
-        }
+    //     for (auto &tag : m_DicomData->GetMetaInfoCardinality())
+    //     {
+    //         QStandardItem *item1 = new QStandardItem(tag.xTagName());
+    //         QStandardItem *item2 = new QStandardItem(tag.tagName());
+    //         QStandardItem *item3 = new QStandardItem(tag.value());
+    //         allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+    //         if (tag.isPatientTag())
+    //         {
+    //             QStandardItem *item4 = new QStandardItem(tag.xTagName());
+    //             QStandardItem *item5 = new QStandardItem(tag.tagName());
+    //             QStandardItem *item6 = new QStandardItem(tag.value());
+    //             patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
+    //         }
+    //     }
 
-        for (auto &tag : m_DicomData->GetMetaInfoCardinality())
-        {
+    //     for (auto &tag : m_DicomData->GetMetaInfoCardinality())
+    //     {
 
-            QStandardItem *item1 = new QStandardItem(tag.xTagName());
-            QStandardItem *item2 = new QStandardItem(tag.tagName());
-            QStandardItem *item3 = new QStandardItem(tag.value());
-            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
-            if (tag.isPatientTag())
-            {
-                QStandardItem *item4 = new QStandardItem(tag.xTagName());
-                QStandardItem *item5 = new QStandardItem(tag.tagName());
-                QStandardItem *item6 = new QStandardItem(tag.value());
-                patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
-            }
-        }
-    }
+    //         QStandardItem *item1 = new QStandardItem(tag.xTagName());
+    //         QStandardItem *item2 = new QStandardItem(tag.tagName());
+    //         QStandardItem *item3 = new QStandardItem(tag.value());
+    //         allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+    //         if (tag.isPatientTag())
+    //         {
+    //             QStandardItem *item4 = new QStandardItem(tag.xTagName());
+    //             QStandardItem *item5 = new QStandardItem(tag.tagName());
+    //             QStandardItem *item6 = new QStandardItem(tag.value());
+    //             patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
+    //         }
+    //     }
+    // }
 }
 void MainWindow::ResetImageData()
 {
-    vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
-    vtkRendererUtils::AddImage(firstRenderer, m_DicomData->GetImageData());
-    firstRenderer->ResetCamera();
-    m_RendererWindow->Render();
+    // vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
+    // vtkRendererUtils::AddImage(firstRenderer, m_DicomData->GetImageData());
+    // firstRenderer->ResetCamera();
+    // m_RendererWindow->Render();
 }
 void MainWindow::InitVTKWidget()
 {
@@ -121,8 +132,6 @@ void MainWindow::BindingMenus()
 
 void MainWindow::InitEventBindings()
 {
-    
-    
 }
 
 vtkSmartPointer<vtkRenderer> MainWindow::GetRenderByIndex(int index)
@@ -140,6 +149,73 @@ QMetaObject::Connection MainWindow::BindingAction(const QString &name, std::func
     }
     return QMetaObject::Connection();
 }
+
+// void MainWindow::UpdateProjectTree(const std::shared_ptr<ProjectItem> &projectInfo, QString option)
+// {
+//     // 找到当前是那个
+//     QStandardItemModel *treeModel = qobject_cast<QStandardItemModel *>(m_ProjectTree->model());
+
+//     if (option == "add")
+//     {
+//         if (projectInfo->getChildren().size() > 0)
+//         {
+//             QStandardItem *item = new QStandardItem(projectInfo->getName());
+//             item->setData(projectInfo->getPath(), Qt::UserRole + 2);
+//             for (auto &child : projectInfo->getChildren())
+//             {
+//                 QStandardItem *childItem = new QStandardItem(child->getName());
+//                 childItem->setData(child->getPath(), Qt::UserRole + 2);
+//                 item->appendRow(childItem);
+//             }
+//         }
+//     }
+//     else
+//     {
+//         auto items = treeModel->findItems(projectInfo->getName(), Qt::MatchRecursive);
+
+//         if (option == "update")
+//         {
+
+//         }
+//         else if (option == "delete")
+//         {
+
+//         }
+//     }
+// }
+
+void MainWindow::AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo)
+{
+    if (patientInfo == nullptr)
+        return;
+
+    std::vector<QStandardItem *> items = patientInfo->GenerateItems(m_ProjectTree, ShowOption::Patient |ShowOption::Studies | ShowOption::Imges);
+
+    auto model = qobject_cast<QStandardItemModel*>(m_ProjectTree->model());
+    for (auto &item : items)
+    {
+        model->appendRow(item);
+    }
+}
+
+// bool MainWindow::UpdateProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo)
+// {
+//     if (projectInfo == nullptr)
+//         return;
+
+//     for (size_t i = 0; i < m_Projects.size(); i++)
+//     {
+//         if (m_Projects[i]->getPath() == projectInfo->getPath())
+//         {
+//             // TODO:当这个值是当前选择項这里直接替换可能会引起数据的问题
+//             m_Projects[i] = projectInfo;
+//             UpdateProjectTree(projectInfo, "update");
+//             return true;
+//         }
+//     }
+
+//     return false;
+// }
 
 QAction *MainWindow::FindAction(const QString &name)
 {
@@ -179,11 +255,25 @@ void MainWindow::OpenDicom()
     {
         // 处理选中的文件
         qDebug() << "选中的文件:" << fileName;
-        m_DicomData = DicomOperator::OpenDicomFile(fileName);
-        SetTableViewData();
-        // 添加图片
-        ResetImageData();
-        // m_DicomData->Print();
+
+        std::shared_ptr<DicomData> dicomData = DicomOperator::OpenDicomFile(fileName);
+
+        bool isHandled = false;
+        for (size_t i = 0; i < m_PatientItems.size(); i++)
+        {
+            if (m_PatientItems[i]->AddItem(dicomData))
+            {
+                // 更新数据
+                isHandled = true;
+                break;
+            }
+        }
+
+        if (!isHandled)
+        {
+            std::shared_ptr<PatientItem> patientInfo = std::make_shared<PatientItem>(dicomData);
+            AddProjectInfo(patientInfo);
+        }
     }
 }
 void MainWindow::CloseDicom()
@@ -195,20 +285,22 @@ void MainWindow::Exit()
     Logger::info("退出程序");
 }
 
-void SetTagTableAutoResize(QTableView * tableView)
+void SetTagTableAutoResize(QTableView *tableView)
 {
     QHeaderView *header = tableView->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::ResizeToContents); // 前几列根据内容调整
     header->setStretchLastSection(true);                         // 最后一列自动拉伸填充
-
 }
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow())
 {
     ui->setupUi(this);
 
+    SplitterManager::RestoreSplitterState(ui->splitter);
+
     m_PatientTagTable = ui->patientTagTable;
     m_AllTagTable = ui->allTagTable;
+    m_ProjectTree = ui->ProjectTree;
 
     // 设置病人信息表头
     QStandardItemModel *patientModel = new QStandardItemModel(0, 3, m_PatientTagTable);
@@ -224,6 +316,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     m_AllTagTable->setModel(allTagModel);
     SetTagTableAutoResize(m_AllTagTable);
 
+    // 设置项目树
+    QStandardItemModel *projectModel = new QStandardItemModel(0, 1, m_ProjectTree);
+    m_ProjectTree->setModel(projectModel);
+
     InitVTKWidget();
 
     // 绑定菜单
@@ -235,6 +331,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 MainWindow::~MainWindow()
 {
+    SplitterManager::SaveSplitterState(ui->splitter);
     // 解除函数绑定
 
     for (auto &conn : m_Connections)
