@@ -11,6 +11,13 @@ enum ShowOption
     Series = 1 << 2,
     Imges = 1 << 3,
 };
+
+enum DataType
+{
+    ID = Qt::UserRole + 1,
+    ImageData,
+};
+
 class PatientItem
 {
 
@@ -21,6 +28,8 @@ private:
 
 public:
     const QString &Id();
+
+    const QString& Name();
 
     PatientItem(std::shared_ptr<DicomData> dicomData);
 

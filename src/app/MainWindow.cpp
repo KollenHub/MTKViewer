@@ -125,9 +125,12 @@ void MainWindow::BindingMenus()
     auto openConnection = BindingAction("打开", std::bind(&MainWindow::OpenDicom, this));
     auto closeConnection = BindingAction("关闭文件", std::bind(&MainWindow::CloseDicom, this));
     auto exitConnection = BindingAction("退出程序", std::bind(&MainWindow::Exit, this));
+
+    auto openFolderConnection = BindingAction("打开文件夹", std::bind(&MainWindow::OpenDicomFolder, this));
     m_Connections.push_back(openConnection);
     m_Connections.push_back(closeConnection);
     m_Connections.push_back(exitConnection);
+    m_Connections.push_back(openFolderConnection);
 }
 
 void MainWindow::InitEventBindings()
@@ -189,12 +192,36 @@ void MainWindow::AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo)
     if (patientInfo == nullptr)
         return;
 
-    std::vector<QStandardItem *> items = patientInfo->GenerateItems(m_ProjectTree, ShowOption::Patient |ShowOption::Studies | ShowOption::Imges);
+    m_PatientItems.push_back(patientInfo);
 
-    auto model = qobject_cast<QStandardItemModel*>(m_ProjectTree->model());
+    std::vector<QStandardItem *> items = patientInfo->GenerateItems(m_ProjectTree, defaultOption);
+
+    auto model = qobject_cast<QStandardItemModel *>(m_ProjectTree->model());
     for (auto &item : items)
     {
         model->appendRow(item);
+    }
+}
+
+void MainWindow::UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientInfo)
+{
+    if (patientInfo == nullptr)
+        return;
+
+    auto model = qobject_cast<QStandardItemModel *>(m_ProjectTree->model());
+
+    auto items = model->findItems(patientInfo->Name(), Qt::MatchRecursive);
+
+    // 替换数据
+    auto newItems = patientInfo->GenerateItems(m_ProjectTree, defaultOption);
+
+    int insertRow = items[0]->row();
+
+    model->removeRows(items[0]->row(), items.size());
+
+    for (size_t i = 0; i < newItems.size(); i++)
+    {
+        model->insertRow(insertRow + i, newItems[i]);
     }
 }
 
@@ -250,7 +277,7 @@ void MainWindow::OpenDicom()
         this,
         "选择Dicom文件",
         "",
-        "DICOM文件 (*.dcm)");
+        "DICOM文件(*.*)");
     if (!fileName.isEmpty())
     {
         // 处理选中的文件
@@ -264,6 +291,7 @@ void MainWindow::OpenDicom()
             if (m_PatientItems[i]->AddItem(dicomData))
             {
                 // 更新数据
+                UpdateProjectInfo(m_PatientItems[i]);
                 isHandled = true;
                 break;
             }
@@ -275,6 +303,10 @@ void MainWindow::OpenDicom()
             AddProjectInfo(patientInfo);
         }
     }
+}
+void MainWindow::OpenDicomFolder()
+{
+    Logger::info("打开DICOM文件夹");
 }
 void MainWindow::CloseDicom()
 {

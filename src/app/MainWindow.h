@@ -11,6 +11,7 @@
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
 private:
     Ui::MainWindow *ui;
     vtkSmartPointer<vtkRenderWindow> m_RendererWindow;
@@ -21,10 +22,14 @@ private:
     QTableView *m_AllTagTable;
     QTreeView *m_ProjectTree;
 
+    int defaultOption = ShowOption::Imges | ShowOption::Patient |  ShowOption::Studies;
+
 private:
     // void UpdateProjectTree(const std::shared_ptr<PatientItem> &projectInfo,QString option);
 
     void AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo);
+
+    void UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientInfo);
 
     // bool UpdateProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo);
 
@@ -39,6 +44,8 @@ private:
     void InitEventBindings();
 
     void OpenDicom();
+
+    void OpenDicomFolder();
 
     void CloseDicom();
 

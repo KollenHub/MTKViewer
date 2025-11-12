@@ -5,6 +5,11 @@ const QString &PatientItem::Id()
     return m_ID;
 }
 
+const QString &PatientItem::Name()
+{
+    return m_DicomDatas[0]->PatientName();
+}
+
 PatientItem::PatientItem(std::shared_ptr<DicomData> dicomData)
 {
     m_ID = QUuid::createUuid().toString();
@@ -23,11 +28,18 @@ bool PatientItem::AddItem(std::shared_ptr<DicomData> dicomData)
 
 QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<DicomData> dicomData, const std::vector<int> &fieldIndexs) const
 {
+
     if (parent)
     {
         int index = GetItemLevel(parent);
 
         Logger::info("Item Level: {}", index);
+
+        // 如果是最后一级，将数据添加到当前項
+        if (index == fieldIndexs.size() - 1)
+        {
+            parent->setData(QVariant::fromValue(dicomData), DataType::ImageData);
+        }
 
         QString fieldValue = GetFieldFunc(fieldIndexs[index])(dicomData);
 
@@ -44,11 +56,12 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
                 if (AddRecursion(child, dicomData, fieldIndexs))
                 {
                     handled = true;
-                    break;
+                    // break;
+                    return child;
                 }
             }
 
-            if (!handled && index< fieldIndexs.size()-1)
+            if (!handled && index < fieldIndexs.size() - 1)
             {
                 QString childValue = GetFieldFunc(fieldIndexs[index + 1])(dicomData);
                 QStandardItem *item = new QStandardItem(childValue);
@@ -138,6 +151,7 @@ std::vector<QStandardItem *> PatientItem::GenerateItems(QTreeView *treeView, int
         if (!isHandled)
         {
             QStandardItem *item = AddRecursion(nullptr, m_DicomDatas[i], fields);
+            item->setData(QVariant::fromValue(m_ID), DataType::ID);
             rootItems.push_back(item);
         }
     }

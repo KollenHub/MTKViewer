@@ -5,6 +5,7 @@
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
 #include <QStringList>
+#include <QMetaType>
 class DicomData
 {
 private:
@@ -67,3 +68,8 @@ public:
 
     ~DicomData();
 };
+
+
+// 注册两种类型
+Q_DECLARE_METATYPE(DicomData)
+Q_DECLARE_METATYPE(std::shared_ptr<DicomData>)
