@@ -49,19 +49,19 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
         if (parent->text() == fieldValue)
         {
             // 判断是否有子项
-            bool handled = false;
+            // bool handled = false;
             for (size_t i = 0; i < parent->rowCount(); i++)
             {
                 QStandardItem *child = parent->child(i);
                 if (AddRecursion(child, dicomData, fieldIndexs))
                 {
-                    handled = true;
+                    // handled = true;
                     // break;
                     return child;
                 }
             }
 
-            if (!handled && index < fieldIndexs.size() - 1)
+            if (index < fieldIndexs.size() - 1)
             {
                 QString childValue = GetFieldFunc(fieldIndexs[index + 1])(dicomData);
                 QStandardItem *item = new QStandardItem(childValue);
