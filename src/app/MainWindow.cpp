@@ -16,7 +16,9 @@
 #include <vtkInteractorStyleImage.h>
 #include <QLayoutItem>
 #include <vtkRendererCollection.h>
-#include "extension/SplitterManager .h"
+#include "extension/SplitterManager.h"
+#include <QMessageBox>
+#include <QCollator>
 
 // void MainWindow::DeleteProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo)
 // {
@@ -119,6 +121,32 @@ void MainWindow::InitVTKWidget()
     // 添加到渲染窗口
     m_RendererWindow->AddRenderer(renderer);
     m_RendererWindow->Render();
+}
+void MainWindow::InitStatusBar()
+{
+    auto statusBar = ui->statusBar;
+    m_ProgressBar = new QProgressBar(statusBar);
+    m_ProgressBar->setStyleSheet(
+        "QProgressBar {"
+        "    border: 1px solid #333333;"
+        "    border-radius: 1px;"
+        "    background-color: #1e1e1e;"
+        "    text-align: center;"
+        "    color: #ffffff;"
+        "    font-weight: bold;"
+        "}"
+        "QProgressBar::chunk {"
+        "    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, "
+        "    stop:0 #4FC3F7, stop:0.5 #29B6F6, stop:1 #0288D1);"
+        "    border-radius: 1px;"
+        "}");
+    m_ProgressBar->setRange(0, 100);
+    m_ProgressBar->setVisible(false);
+    m_ProgressBar->setTextVisible(true);
+    m_ProgressBar->setFixedHeight(20);
+    m_ProgressBar->setFixedWidth(200);
+    m_ProgressBar->setFormat("%p%");
+    statusBar->addWidget(m_ProgressBar);
 }
 void MainWindow::BindingMenus()
 {
@@ -280,6 +308,14 @@ void MainWindow::OpenDicom()
         "DICOM文件(*.*)");
     if (!fileName.isEmpty())
     {
+        // 判断后缀名
+        QFileInfo fileInfo(fileName);
+        if (!(fileInfo.suffix().isEmpty() || !m_DicomFileExts.contains(fileInfo.suffix())))
+        {
+            QMessageBox::warning(this, "提示", "请选择DICOM文件");
+            return;
+        }
+
         // 处理选中的文件
         qDebug() << "选中的文件:" << fileName;
 
@@ -307,6 +343,92 @@ void MainWindow::OpenDicom()
 void MainWindow::OpenDicomFolder()
 {
     Logger::info("打开DICOM文件夹");
+
+    QDir dir = QFileDialog::getExistingDirectory(
+        this,
+        "选择Dicom文件夹",
+        "",
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    if (dir.isEmpty())
+    {
+        return;
+    }
+
+    Logger::info("打开文件夹{}", dir.absolutePath().toStdString());
+
+    QStringList fileList = dir.entryList(QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
+
+    // 使用 QCollator 进行自然排序
+    QCollator collator;
+    collator.setNumericMode(true); // 启用数字模式
+
+    // 记录一次性更新
+    std::vector<std::shared_ptr<PatientItem>> needUpdatePatientItems;
+
+    std::sort(fileList.begin(), fileList.end(), collator);
+
+    m_ProgressBar->setVisible(true);
+    m_ProgressBar->setRange(0, fileList.size());
+    m_ProgressBar->setValue(0);
+    for (size_t i = 0; i < fileList.size(); i++)
+    {
+        Logger::info("文件名::{}", fileList[i].toStdString());
+
+        QString fileName = dir.absoluteFilePath(fileList[i]);
+        // 获取文件名
+        QFileInfo fileInfo(fileName);
+
+        // 获取文件后缀
+        QString fileSuffix = fileInfo.suffix();
+
+        Logger::info("文件后缀::{}", fileSuffix.toStdString());
+
+        // 判断后缀名
+        if (!(fileInfo.suffix().isEmpty() || m_DicomFileExts.contains(fileInfo.suffix())))
+        {
+            continue;
+        }
+
+        std::shared_ptr<DicomData> dicomData = DicomOperator::OpenDicomFile(fileName);
+
+        if (dicomData == nullptr)
+        {
+            continue;
+        }
+
+        bool isHandled = false;
+        for (size_t i = 0; i < m_PatientItems.size(); i++)
+        {
+            if (m_PatientItems[i]->AddItem(dicomData))
+            {
+                if (std::find(needUpdatePatientItems.begin(), needUpdatePatientItems.end(), m_PatientItems[i]) == needUpdatePatientItems.end())
+                {
+                    // 记录起来批量更新
+                    needUpdatePatientItems.push_back(m_PatientItems[i]);
+                }
+                // 更新数据
+                // UpdateProjectInfo(m_PatientItems[i]);
+                isHandled = true;
+                break;
+            }
+        }
+
+        if (!isHandled)
+        {
+            // 新建的直接更新
+            std::shared_ptr<PatientItem> patientInfo = std::make_shared<PatientItem>(dicomData);
+            AddProjectInfo(patientInfo);
+        }
+
+        m_ProgressBar->setValue(i + 1);
+    }
+
+    for (auto updateItem : needUpdatePatientItems)
+    {
+        UpdateProjectInfo(updateItem);
+    }
+    m_ProgressBar->setVisible(false);
 }
 void MainWindow::CloseDicom()
 {
@@ -353,6 +475,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     m_ProjectTree->setModel(projectModel);
 
     InitVTKWidget();
+
+    // 初始化状态栏
+    InitStatusBar();
 
     // 绑定菜单
     BindingMenus();

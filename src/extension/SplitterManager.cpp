@@ -1,4 +1,4 @@
-#include "SplitterManager .h"
+#include "SplitterManager.h"
 
 void SplitterManager::SaveSplitterState(QSplitter *splitter, const QString &configName)
 {

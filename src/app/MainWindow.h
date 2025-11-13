@@ -7,6 +7,7 @@
 #include <vtkRenderer.h>
 #include <QTreeView.h>
 #include "PatientItem.h"
+#include <QProgressBar>
 
 class MainWindow : public QMainWindow
 {
@@ -21,8 +22,12 @@ private:
     QTableView *m_PatientTagTable;
     QTableView *m_AllTagTable;
     QTreeView *m_ProjectTree;
+    QProgressBar* m_ProgressBar;
+    
 
     int defaultOption = ShowOption::Imges | ShowOption::Patient |  ShowOption::Studies;
+
+    const QStringList m_DicomFileExts = {"dcm", "dicom"};
 
 private:
     // void UpdateProjectTree(const std::shared_ptr<PatientItem> &projectInfo,QString option);
@@ -40,6 +45,8 @@ private:
     void ResetImageData();
 
     void InitVTKWidget();
+
+    void InitStatusBar();
 
     void InitEventBindings();
 
