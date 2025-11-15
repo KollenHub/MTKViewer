@@ -19,7 +19,7 @@
 #include "extension/SplitterManager.h"
 #include <QMessageBox>
 #include <QCollator>
-
+#include "extension/vtkCustomMouseInteractorStyleImage.h"
 // void MainWindow::DeleteProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo)
 // {
 //     auto it = std::find(m_Projects.begin(), m_Projects.end(), projectInfo);
@@ -30,70 +30,176 @@
 //     }
 // }
 
-void MainWindow::SetTableViewData()
+void MainWindow::SetTagTableAutoResize(QTableView *tableView)
 {
-    // if (m_DicomData != nullptr)
-    // {
-    //     // 获取treeview的model
-    //     QStandardItemModel *allTagModel = qobject_cast<QStandardItemModel *>(m_AllTagTable->model());
-    //     allTagModel->removeRows(0, allTagModel->rowCount());
-
-    //     QStandardItemModel *patientTagModel = qobject_cast<QStandardItemModel *>(m_PatientTagTable->model());
-    //     patientTagModel->removeRows(0, patientTagModel->rowCount());
-
-    //     for (auto &tag : m_DicomData->GetDataSetCardinality())
-    //     {
-    //         QStandardItem *item1 = new QStandardItem(tag.xTagName());
-    //         QStandardItem *item2 = new QStandardItem(tag.tagName());
-    //         QStandardItem *item3 = new QStandardItem(tag.value());
-    //         allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
-    //         if (tag.isPatientTag())
-    //         {
-    //             QStandardItem *item4 = new QStandardItem(tag.xTagName());
-    //             QStandardItem *item5 = new QStandardItem(tag.tagName());
-    //             QStandardItem *item6 = new QStandardItem(tag.value());
-    //             patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
-    //         }
-    //     }
-
-    //     for (auto &tag : m_DicomData->GetMetaInfoCardinality())
-    //     {
-    //         QStandardItem *item1 = new QStandardItem(tag.xTagName());
-    //         QStandardItem *item2 = new QStandardItem(tag.tagName());
-    //         QStandardItem *item3 = new QStandardItem(tag.value());
-    //         allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
-    //         if (tag.isPatientTag())
-    //         {
-    //             QStandardItem *item4 = new QStandardItem(tag.xTagName());
-    //             QStandardItem *item5 = new QStandardItem(tag.tagName());
-    //             QStandardItem *item6 = new QStandardItem(tag.value());
-    //             patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
-    //         }
-    //     }
-
-    //     for (auto &tag : m_DicomData->GetMetaInfoCardinality())
-    //     {
-
-    //         QStandardItem *item1 = new QStandardItem(tag.xTagName());
-    //         QStandardItem *item2 = new QStandardItem(tag.tagName());
-    //         QStandardItem *item3 = new QStandardItem(tag.value());
-    //         allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
-    //         if (tag.isPatientTag())
-    //         {
-    //             QStandardItem *item4 = new QStandardItem(tag.xTagName());
-    //             QStandardItem *item5 = new QStandardItem(tag.tagName());
-    //             QStandardItem *item6 = new QStandardItem(tag.value());
-    //             patientTagModel->appendRow(QList<QStandardItem *>{item4, item5, item6});
-    //         }
-    //     }
-    // }
+    QHeaderView *header = tableView->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::ResizeToContents); // 前几列根据内容调整
+    header->setStretchLastSection(true);                         // 最后一列自动拉伸填充
 }
-void MainWindow::ResetImageData()
+
+void MainWindow::ShowTreeItem(QTreeView &treeView, const QModelIndex &index, const bool selectUI)
 {
-    // vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
-    // vtkRendererUtils::AddImage(firstRenderer, m_DicomData->GetImageData());
+    QStandardItemModel *model = qobject_cast<QStandardItemModel *>(treeView.model());
+
+    auto item = model->itemFromIndex(index);
+
+    // 查找最末尾的子节点
+    std::vector<QStandardItem *> items;
+    FindBottomChildren(*model, index, items);
+
+    // 选择第一个
+    QStandardItem *firstItem = items[0];
+
+    // 获取数据
+    QVariant variant = firstItem->data(DataType::ImageData);
+
+    if (variant.isValid())
+    {
+        std::shared_ptr<DicomData> dicomData = variant.value<std::shared_ptr<DicomData>>();
+
+        SetTableViewData(dicomData);
+
+        //选择ui代表是滚动反选的时候，不修改图片大小
+        ResetImageData(dicomData, !selectUI);
+    }
+
+    if (selectUI)
+    {
+        treeView.setCurrentIndex(index);
+        treeView.scrollTo(index);
+    }
+}
+
+void MainWindow::OnTreeItemClicked(const QModelIndex &index)
+{
+    QTreeView *tree = qobject_cast<QTreeView *>(sender());
+
+    Logger::debug("index is {}-{}", index.row(), index.column());
+
+    ShowTreeItem(*tree, index, false);
+}
+
+void MainWindow::FindBottomChildren(const QStandardItemModel &model, const QModelIndex &index, std::vector<QStandardItem *> &items)
+{
+    if (!index.isValid())
+        return;
+
+    QStandardItem *item = model.itemFromIndex(index);
+
+    if (item->hasChildren())
+    {
+        for (size_t i = 0; i < item->rowCount(); i++)
+        {
+            QStandardItem *child = item->child(i);
+            FindBottomChildren(model, child->index(), items);
+        }
+    }
+    else
+    {
+        items.push_back(item);
+    }
+}
+
+void MainWindow::SetTableViewData(const std::shared_ptr<DicomData> &dicomData)
+{
+    if (dicomData != nullptr)
+    {
+        // 获取treeview的model
+        QStandardItemModel *allTagModel = qobject_cast<QStandardItemModel *>(m_AllTagTable->model());
+        allTagModel->removeRows(0, allTagModel->rowCount());
+
+        QStandardItemModel *patientTagModel = qobject_cast<QStandardItemModel *>(m_PatientTagTable->model());
+        patientTagModel->removeRows(0, patientTagModel->rowCount());
+
+        for (auto &tag : dicomData->GetAllTags())
+        {
+            QStandardItem *item1 = new QStandardItem(tag.xTagName());
+            QStandardItem *item2 = new QStandardItem(tag.tagName());
+            QStandardItem *item3 = new QStandardItem(tag.value());
+            allTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+        }
+
+        for (auto &tag : dicomData->GetPatientTags())
+        {
+            QStandardItem *item1 = new QStandardItem(tag.xTagName());
+            QStandardItem *item2 = new QStandardItem(tag.tagName());
+            QStandardItem *item3 = new QStandardItem(tag.value());
+            patientTagModel->appendRow(QList<QStandardItem *>{item1, item2, item3});
+        }
+    }
+}
+void MainWindow::ResetImageData(const std::shared_ptr<DicomData> &dicomData, bool isResetCamera)
+{
+    vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
+    firstRenderer->RemoveAllViewProps();
+    vtkRendererUtils::AddImage(firstRenderer, dicomData->GetImageData(), isResetCamera);
     // firstRenderer->ResetCamera();
-    // m_RendererWindow->Render();
+    m_RendererWindow->Render();
+}
+void MainWindow::OnRenderWindowMouseWheel(int increment)
+{
+    Logger::debug("increment is {}", increment);
+
+    auto modelIndex = m_ProjectTree->currentIndex();
+
+    if (!modelIndex.isValid())
+        return;
+
+    auto model = qobject_cast<QStandardItemModel *>(m_ProjectTree->model());
+
+    auto item = model->itemFromIndex(modelIndex);
+
+    Logger::debug("item name is {} modelIndex row:{} column:{}", item->text().toStdString(), m_ProjectTree->currentIndex().row(), m_ProjectTree->currentIndex().column());
+
+    if (item->hasChildren())
+        return;
+
+    int totalRow = item->parent()->rowCount();
+
+    int currentRow = modelIndex.row() - increment;
+
+    if (currentRow < 0)
+    {
+        currentRow = totalRow - 1;
+    }
+    else if (currentRow >= totalRow)
+    {
+        currentRow = 0;
+    }
+
+    Logger::debug("modelIndex row:{} column:{}", m_ProjectTree->currentIndex().row(), m_ProjectTree->currentIndex().column());
+
+    auto newIndex = model->index(currentRow, modelIndex.column(), item->parent()->index());
+
+    Logger::debug("newIndex row:{} column:{}", newIndex.row(), newIndex.column());
+
+    ShowTreeItem(*m_ProjectTree, newIndex, true);
+}
+void MainWindow::InitContentControls()
+{
+    m_PatientTagTable = ui->patientTagTable;
+    m_AllTagTable = ui->allTagTable;
+    m_ProjectTree = ui->ProjectTree;
+    // 禁用编辑
+    m_ProjectTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    // 设置病人信息表头
+    QStandardItemModel *patientModel = new QStandardItemModel(0, 3, m_PatientTagTable);
+    patientModel->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
+    // 设置表格内容
+    m_PatientTagTable->setModel(patientModel);
+    SetTagTableAutoResize(m_PatientTagTable);
+
+    // 设置所有信息表头
+    QStandardItemModel *allTagModel = new QStandardItemModel(0, 3, m_AllTagTable);
+    allTagModel->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
+    // 设置表格内容
+    m_AllTagTable->setModel(allTagModel);
+    SetTagTableAutoResize(m_AllTagTable);
+
+    // 设置项目树
+    QStandardItemModel *projectModel = new QStandardItemModel(0, 1, m_ProjectTree);
+    m_ProjectTree->setModel(projectModel);
 }
 void MainWindow::InitVTKWidget()
 {
@@ -115,7 +221,8 @@ void MainWindow::InitVTKWidget()
     // Qt内部已经创建了一个vtkRenderWindowInteractor
     // 可以设置，但是不能调用自带的Initialize以及对应的Start
     vtkSmartPointer<vtkRenderWindowInteractor> interactor = m_RendererWindow->GetInteractor();
-    vtkSmartPointer<vtkInteractorStyleImage> style = vtkSmartPointer<vtkInteractorStyleImage>::New();
+    vtkSmartPointer<vtkCustomMouseInteractorStyleImage> style = vtkSmartPointer<vtkCustomMouseInteractorStyleImage>::New();
+    style->SetOnMouseWheel(std::bind(&MainWindow::OnRenderWindowMouseWheel, this, std::placeholders::_1));
     interactor->SetInteractorStyle(style);
     m_RendererWindow->SetInteractor(interactor);
     // 添加到渲染窗口
@@ -163,6 +270,10 @@ void MainWindow::BindingMenus()
 
 void MainWindow::InitEventBindings()
 {
+    // 绑定单击事件
+    auto treeClickedConnection = connect(m_ProjectTree, &QTreeView::clicked, this, &MainWindow::OnTreeItemClicked);
+
+    m_Connections.push_back(treeClickedConnection);
 }
 
 vtkSmartPointer<vtkRenderer> MainWindow::GetRenderByIndex(int index)
@@ -229,6 +340,11 @@ void MainWindow::AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo)
     {
         model->appendRow(item);
     }
+
+    if (items.size() > 0)
+    {
+        ShowTreeItem(*m_ProjectTree, items[0]->index(), false);
+    }
 }
 
 void MainWindow::UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientInfo)
@@ -252,25 +368,6 @@ void MainWindow::UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientIn
         model->insertRow(insertRow + i, newItems[i]);
     }
 }
-
-// bool MainWindow::UpdateProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo)
-// {
-//     if (projectInfo == nullptr)
-//         return;
-
-//     for (size_t i = 0; i < m_Projects.size(); i++)
-//     {
-//         if (m_Projects[i]->getPath() == projectInfo->getPath())
-//         {
-//             // TODO:当这个值是当前选择項这里直接替换可能会引起数据的问题
-//             m_Projects[i] = projectInfo;
-//             UpdateProjectTree(projectInfo, "update");
-//             return true;
-//         }
-//     }
-
-//     return false;
-// }
 
 QAction *MainWindow::FindAction(const QString &name)
 {
@@ -373,16 +470,12 @@ void MainWindow::OpenDicomFolder()
     m_ProgressBar->setValue(0);
     for (size_t i = 0; i < fileList.size(); i++)
     {
-        Logger::info("文件名::{}", fileList[i].toStdString());
-
         QString fileName = dir.absoluteFilePath(fileList[i]);
         // 获取文件名
         QFileInfo fileInfo(fileName);
 
         // 获取文件后缀
         QString fileSuffix = fileInfo.suffix();
-
-        Logger::info("文件后缀::{}", fileSuffix.toStdString());
 
         // 判断后缀名
         if (!(fileInfo.suffix().isEmpty() || m_DicomFileExts.contains(fileInfo.suffix())))
@@ -424,8 +517,11 @@ void MainWindow::OpenDicomFolder()
         m_ProgressBar->setValue(i + 1);
     }
 
+    m_ProgressBar->setValue(0);
+    m_ProgressBar->setRange(0, needUpdatePatientItems.size());
     for (auto updateItem : needUpdatePatientItems)
     {
+        m_ProgressBar->setValue(m_ProgressBar->value() + 1);
         UpdateProjectInfo(updateItem);
     }
     m_ProgressBar->setVisible(false);
@@ -437,13 +533,13 @@ void MainWindow::CloseDicom()
 void MainWindow::Exit()
 {
     Logger::info("退出程序");
-}
 
-void SetTagTableAutoResize(QTableView *tableView)
-{
-    QHeaderView *header = tableView->horizontalHeader();
-    header->setSectionResizeMode(QHeaderView::ResizeToContents); // 前几列根据内容调整
-    header->setStretchLastSection(true);                         // 最后一列自动拉伸填充
+    auto status = QMessageBox::information(this, "提示", "是否退出程序", QMessageBox::Yes | QMessageBox::No);
+
+    if (status == QMessageBox::Yes)
+    {
+        QApplication::quit();
+    }
 }
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow())
@@ -452,29 +548,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     SplitterManager::RestoreSplitterState(ui->splitter);
 
-    m_PatientTagTable = ui->patientTagTable;
-    m_AllTagTable = ui->allTagTable;
-    m_ProjectTree = ui->ProjectTree;
-
-    // 设置病人信息表头
-    QStandardItemModel *patientModel = new QStandardItemModel(0, 3, m_PatientTagTable);
-    patientModel->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
-    // 设置表格内容
-    m_PatientTagTable->setModel(patientModel);
-    SetTagTableAutoResize(m_PatientTagTable);
-
-    // 设置所有信息表头
-    QStandardItemModel *allTagModel = new QStandardItemModel(0, 3, m_AllTagTable);
-    allTagModel->setHorizontalHeaderLabels(QStringList() << "XTagName" << "TagName" << "Value");
-    // 设置表格内容
-    m_AllTagTable->setModel(allTagModel);
-    SetTagTableAutoResize(m_AllTagTable);
-
-    // 设置项目树
-    QStandardItemModel *projectModel = new QStandardItemModel(0, 1, m_ProjectTree);
-    m_ProjectTree->setModel(projectModel);
-
     InitVTKWidget();
+
+    // 初始化内容组件
+    InitContentControls();
 
     // 初始化状态栏
     InitStatusBar();

@@ -33,17 +33,7 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
     {
         int index = GetItemLevel(parent);
 
-        Logger::info("Item Level: {}", index);
-
-        // 如果是最后一级，将数据添加到当前項
-        if (index == fieldIndexs.size() - 1)
-        {
-            parent->setData(QVariant::fromValue(dicomData), DataType::ImageData);
-        }
-
         QString fieldValue = GetFieldFunc(fieldIndexs[index])(dicomData);
-
-        Logger::info("Field Value: {}  Parent:{}", fieldValue.toStdString(), parent->text().toStdString());
 
         // 如果当前父节点与当前的节点值获取的值一直，则判断是否一致
         if (parent->text() == fieldValue)
@@ -53,10 +43,8 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
             for (size_t i = 0; i < parent->rowCount(); i++)
             {
                 QStandardItem *child = parent->child(i);
-                if (AddRecursion(child, dicomData, fieldIndexs))
+                if (index < fieldIndexs.size() - 2&&AddRecursion(child, dicomData, fieldIndexs))
                 {
-                    // handled = true;
-                    // break;
                     return child;
                 }
             }
@@ -66,7 +54,15 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
                 QString childValue = GetFieldFunc(fieldIndexs[index + 1])(dicomData);
                 QStandardItem *item = new QStandardItem(childValue);
                 parent->appendRow(item);
-                AddRecursion(item, dicomData, fieldIndexs);
+                if (index < fieldIndexs.size() - 2) // 倒数第二层以上才有子项
+                {
+                    AddRecursion(item, dicomData, fieldIndexs);
+                }
+                else
+                {
+                    //最后一阶加入图像数据
+                    item->setData(QVariant::fromValue(dicomData), DataType::ImageData);
+                }
                 return item;
             }
         }

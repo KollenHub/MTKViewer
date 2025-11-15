@@ -10,6 +10,11 @@ add_library(KN::${LIB_NAME} ALIAS ${LIB_NAME})
 target_link_libraries(${LIB_NAME} PUBLIC
     KN::Core
     Qt5::Core
-    Qt5::Widgets)
+    Qt5::Widgets
+    ${VTK_LIBRARIES})
 
 
+vtk_module_autoinit(
+    TARGETS ${LIB_NAME}
+    MODULES ${VTK_LIBRARIES}
+)

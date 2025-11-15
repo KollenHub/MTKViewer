@@ -62,6 +62,8 @@ public:
 
     const vtkSmartPointer<vtkImageData> GetImageData() const;
 
+    const std::vector<DicomProperty> &GetPatientTags() const;
+
     const std::vector<DicomProperty> &GetAllTags() const;
 
     void Print() const;

@@ -22,10 +22,9 @@ private:
     QTableView *m_PatientTagTable;
     QTableView *m_AllTagTable;
     QTreeView *m_ProjectTree;
-    QProgressBar* m_ProgressBar;
-    
+    QProgressBar *m_ProgressBar;
 
-    int defaultOption = ShowOption::Imges | ShowOption::Patient |  ShowOption::Studies;
+    int defaultOption = ShowOption::Imges | ShowOption::Patient | ShowOption::Studies;
 
     const QStringList m_DicomFileExts = {"dcm", "dicom"};
 
@@ -39,10 +38,21 @@ private:
     // bool UpdateProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo);
 
     // void DeleteProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo);
+    void SetTagTableAutoResize(QTableView *tableView);
 
-    void SetTableViewData();
+    void ShowTreeItem(QTreeView &treeView, const QModelIndex &index, const bool selectUI);
 
-    void ResetImageData();
+    void OnTreeItemClicked(const QModelIndex &index);
+
+    void FindBottomChildren(const QStandardItemModel &model, const QModelIndex &index, std::vector<QStandardItem *> &items);
+
+    void SetTableViewData(const std::shared_ptr<DicomData> &dicomData);
+
+    void ResetImageData(const std::shared_ptr<DicomData> &dicomData, bool isResetCamera = true);
+
+    void OnRenderWindowMouseWheel(int increment);
+
+    void InitContentControls();
 
     void InitVTKWidget();
 

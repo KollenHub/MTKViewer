@@ -94,6 +94,11 @@ const vtkSmartPointer<vtkImageData> DicomData::GetImageData() const
     return m_vtkImageData;
 }
 
+const std::vector<DicomProperty> &DicomData::GetPatientTags() const
+{
+    return m_PatientTags;
+}
+
 const std::vector<DicomProperty> &DicomData::GetAllTags() const
 {
     return m_AllTags;
