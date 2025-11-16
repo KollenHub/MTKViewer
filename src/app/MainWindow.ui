@@ -87,6 +87,36 @@ QStatusBar{
        background-color: #252526;
 }
 
+ QMessageBox {
+            background-color: #2b2b2b;
+            color: #ffffff;
+            font-family: &quot;Segoe UI&quot;, &quot;Microsoft YaHei&quot;;
+        }
+        QMessageBox QLabel {
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        QMessageBox QPushButton {
+            background-color: #404040;
+            color: #ffffff;
+            border: 1px solid #555555;
+            border-radius: 4px;
+            padding: 8px 16px;
+            min-width: 80px;
+            font-size: 13px;
+        }
+        QMessageBox QPushButton:hover {
+            background-color: #505050;
+            border-color: #666666;
+        }
+        QMessageBox QPushButton:pressed {
+            background-color: #303030;
+        }
+        QMessageBox QPushButton:focus {
+            border: 1px solid #0078d4;
+        }
+
+
 *{
    color:rgb(198, 198, 198)
 }</string>

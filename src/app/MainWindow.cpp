@@ -17,18 +17,9 @@
 #include <QLayoutItem>
 #include <vtkRendererCollection.h>
 #include "extension/SplitterManager.h"
-#include <QMessageBox>
 #include <QCollator>
 #include "extension/vtkCustomMouseInteractorStyleImage.h"
-// void MainWindow::DeleteProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo)
-// {
-//     auto it = std::find(m_Projects.begin(), m_Projects.end(), projectInfo);
-//     if (it != m_Projects.end())
-//     {
-//         m_Projects.erase(it);
-//         UpdateProjectTree(projectInfo, "delete");
-//     }
-// }
+#include "extension/MsgBox.h"
 
 void MainWindow::SetTagTableAutoResize(QTableView *tableView)
 {
@@ -59,7 +50,7 @@ void MainWindow::ShowTreeItem(QTreeView &treeView, const QModelIndex &index, con
 
         SetTableViewData(dicomData);
 
-        //选择ui代表是滚动反选的时候，不修改图片大小
+        // 选择ui代表是滚动反选的时候，不修改图片大小
         ResetImageData(dicomData, !selectUI);
     }
 
@@ -97,6 +88,22 @@ void MainWindow::FindBottomChildren(const QStandardItemModel &model, const QMode
     else
     {
         items.push_back(item);
+    }
+}
+
+void MainWindow::DeleteRecursionItem(QStandardItemModel &model, QStandardItem *item)
+{
+    if (item->parent() == nullptr)
+    {
+        model.removeRow(item->row());
+    }
+    else if (item->parent()->rowCount() == 1)
+    {
+        DeleteRecursionItem(model, item->parent());
+    }
+    else if (item->parent()->rowCount() > 1)
+    {
+        model.removeRow(item->row(), item->parent()->index());
     }
 }
 
@@ -257,7 +264,7 @@ void MainWindow::InitStatusBar()
 }
 void MainWindow::BindingMenus()
 {
-    auto openConnection = BindingAction("打开", std::bind(&MainWindow::OpenDicom, this));
+    auto openConnection = BindingAction("打开文件", std::bind(&MainWindow::OpenDicom, this));
     auto closeConnection = BindingAction("关闭文件", std::bind(&MainWindow::CloseDicom, this));
     auto exitConnection = BindingAction("退出程序", std::bind(&MainWindow::Exit, this));
 
@@ -272,6 +279,9 @@ void MainWindow::InitEventBindings()
 {
     // 绑定单击事件
     auto treeClickedConnection = connect(m_ProjectTree, &QTreeView::clicked, this, &MainWindow::OnTreeItemClicked);
+
+    // 绑定键盘事件
+    BindingKeyEvents();
 
     m_Connections.push_back(treeClickedConnection);
 }
@@ -292,39 +302,28 @@ QMetaObject::Connection MainWindow::BindingAction(const QString &name, std::func
     return QMetaObject::Connection();
 }
 
-// void MainWindow::UpdateProjectTree(const std::shared_ptr<ProjectItem> &projectInfo, QString option)
-// {
-//     // 找到当前是那个
-//     QStandardItemModel *treeModel = qobject_cast<QStandardItemModel *>(m_ProjectTree->model());
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    for (auto keyCommand : m_KeyCommands)
+    {
+        if (keyCommand.Execute(*event))
+            break;
+    }
+}
 
-//     if (option == "add")
-//     {
-//         if (projectInfo->getChildren().size() > 0)
-//         {
-//             QStandardItem *item = new QStandardItem(projectInfo->getName());
-//             item->setData(projectInfo->getPath(), Qt::UserRole + 2);
-//             for (auto &child : projectInfo->getChildren())
-//             {
-//                 QStandardItem *childItem = new QStandardItem(child->getName());
-//                 childItem->setData(child->getPath(), Qt::UserRole + 2);
-//                 item->appendRow(childItem);
-//             }
-//         }
-//     }
-//     else
-//     {
-//         auto items = treeModel->findItems(projectInfo->getName(), Qt::MatchRecursive);
+void MainWindow::BindingKeyEvents()
+{
+    m_KeyCommands.emplace_back(Qt::Key_O, Qt::ControlModifier, std::bind(&MainWindow::OpenDicom, this));
 
-//         if (option == "update")
-//         {
+    m_KeyCommands.emplace_back(Qt::Key_W, Qt::ControlModifier, std::bind(&MainWindow::CloseDicom, this));
 
-//         }
-//         else if (option == "delete")
-//         {
+    m_KeyCommands.emplace_back(Qt::Key_Q, Qt::ControlModifier, std::bind(&MainWindow::Exit, this));
 
-//         }
-//     }
-// }
+    m_KeyCommands.emplace_back(Qt::Key_O, Qt::ShiftModifier, std::bind(&MainWindow::OpenDicomFolder, this));
+
+    m_KeyCommands.emplace_back(Qt::Key_Delete, std::bind(&MainWindow::DeleteCurrentProjectInfo, this), [this]
+                               { return m_ProjectTree->hasFocus(); });
+}
 
 void MainWindow::AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo)
 {
@@ -369,6 +368,65 @@ void MainWindow::UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientIn
     }
 }
 
+void MainWindow::DeleteCurrentProjectInfo()
+{
+    if (m_ProjectTree->currentIndex().isValid())
+    {
+        auto model = qobject_cast<QStandardItemModel *>(m_ProjectTree->model());
+
+        // 获取对应的数据
+        auto item = model->itemFromIndex(m_ProjectTree->currentIndex());
+
+        QString itemName = item->text();
+
+        auto status = MsgBox::question(this, "删除项目", QString("确定要删除%1吗？").arg(itemName));
+
+        if (status == QMessageBox::No)
+        {
+            Logger::info("取消删除项目：{}", itemName.toStdString());
+            return;
+        }
+
+        std::vector<QStandardItem *> childItems;
+        FindBottomChildren(*model, m_ProjectTree->currentIndex(), childItems);
+
+        // 查找对应的ID
+        QString id = item->data(DataType::ID).toString();
+
+        // 查找对应的patientInfo
+        auto targetIter = std::find_if(m_PatientItems.begin(), m_PatientItems.end(), [&id](const std::shared_ptr<PatientItem> &patientInfo)
+                                       { return patientInfo->Id() == id; });
+
+        if (targetIter == m_PatientItems.end())
+        {
+            Logger::error("未找到项目：{}", id.toStdString());
+            return;
+        }
+
+        std::shared_ptr<PatientItem> targetInfo = *targetIter;
+        // 判断数量
+        if (childItems.size() == targetInfo->DataCount())
+        {
+            // 全部移除
+            m_PatientItems.erase(targetIter);
+        }
+        else // 小于
+        {
+            for (auto childItem : childItems)
+            {
+                std::shared_ptr<DicomData> dicomData = childItem->data(DataType::ImageData).value<std::shared_ptr<DicomData>>();
+                Logger::debug("移除项目前：{}", targetInfo->DataCount());
+                targetInfo->RemoveData(dicomData);
+                Logger::debug("移除项目后：{}", targetInfo->DataCount());
+            }
+        }
+
+        // 递归删除父項
+        DeleteRecursionItem(*model, item);
+        Logger::info("删除项目：{}", id.toStdString());
+    }
+}
+
 QAction *MainWindow::FindAction(const QString &name)
 {
     QList<QAction *> actions = ui->menubar->actions();
@@ -407,9 +465,9 @@ void MainWindow::OpenDicom()
     {
         // 判断后缀名
         QFileInfo fileInfo(fileName);
-        if (!(fileInfo.suffix().isEmpty() || !m_DicomFileExts.contains(fileInfo.suffix())))
+        if (!(fileInfo.suffix().isEmpty() || m_DicomFileExts.contains(fileInfo.suffix())))
         {
-            QMessageBox::warning(this, "提示", "请选择DICOM文件");
+            MsgBox::warning(this, "提示", "请选择DICOM文件");
             return;
         }
 
@@ -534,7 +592,7 @@ void MainWindow::Exit()
 {
     Logger::info("退出程序");
 
-    auto status = QMessageBox::information(this, "提示", "是否退出程序", QMessageBox::Yes | QMessageBox::No);
+    auto status = MsgBox::information(this, "提示", "是否退出程序", QMessageBox::Yes | QMessageBox::No);
 
     if (status == QMessageBox::Yes)
     {

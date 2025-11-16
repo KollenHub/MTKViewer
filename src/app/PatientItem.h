@@ -29,7 +29,11 @@ private:
 public:
     const QString &Id();
 
-    const QString& Name();
+    const QString &Name();
+
+    const int DataCount();
+
+    void RemoveData(const std::shared_ptr<DicomData> &dicomData);
 
     PatientItem(std::shared_ptr<DicomData> dicomData);
 

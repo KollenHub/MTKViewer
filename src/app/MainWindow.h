@@ -8,6 +8,8 @@
 #include <QTreeView.h>
 #include "PatientItem.h"
 #include <QProgressBar>
+#include <QKeyEvent>
+#include "extension/KeyCommand.h"
 
 class MainWindow : public QMainWindow
 {
@@ -18,6 +20,7 @@ private:
     vtkSmartPointer<vtkRenderWindow> m_RendererWindow;
     QList<QMetaObject::Connection> m_Connections;
     std::vector<std::shared_ptr<PatientItem>> m_PatientItems;
+    std::vector<KeyCommand> m_KeyCommands;
 
     QTableView *m_PatientTagTable;
     QTableView *m_AllTagTable;
@@ -28,16 +31,17 @@ private:
 
     const QStringList m_DicomFileExts = {"dcm", "dicom"};
 
-private:
-    // void UpdateProjectTree(const std::shared_ptr<PatientItem> &projectInfo,QString option);
+protected:
+    virtual void keyPressEvent(QKeyEvent *event) override;
 
+private:
+    
     void AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo);
 
     void UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientInfo);
 
-    // bool UpdateProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo);
+    void DeleteCurrentProjectInfo();
 
-    // void DeleteProjectInfo(const std::shared_ptr<ProjectItem> &projectInfo);
     void SetTagTableAutoResize(QTableView *tableView);
 
     void ShowTreeItem(QTreeView &treeView, const QModelIndex &index, const bool selectUI);
@@ -45,6 +49,8 @@ private:
     void OnTreeItemClicked(const QModelIndex &index);
 
     void FindBottomChildren(const QStandardItemModel &model, const QModelIndex &index, std::vector<QStandardItem *> &items);
+
+    void DeleteRecursionItem(QStandardItemModel& model, QStandardItem *item);
 
     void SetTableViewData(const std::shared_ptr<DicomData> &dicomData);
 
@@ -59,6 +65,8 @@ private:
     void InitStatusBar();
 
     void InitEventBindings();
+
+    void BindingKeyEvents();
 
     void OpenDicom();
 

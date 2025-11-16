@@ -10,6 +10,16 @@ const QString &PatientItem::Name()
     return m_DicomDatas[0]->PatientName();
 }
 
+const int PatientItem::DataCount()
+{
+    return m_DicomDatas.size();
+}
+
+void PatientItem::RemoveData(const std::shared_ptr<DicomData> &dicomData)
+{
+    m_DicomDatas.erase(std::find(m_DicomDatas.begin(), m_DicomDatas.end(), dicomData));
+}
+
 PatientItem::PatientItem(std::shared_ptr<DicomData> dicomData)
 {
     m_ID = QUuid::createUuid().toString();
@@ -43,7 +53,7 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
             for (size_t i = 0; i < parent->rowCount(); i++)
             {
                 QStandardItem *child = parent->child(i);
-                if (index < fieldIndexs.size() - 2&&AddRecursion(child, dicomData, fieldIndexs))
+                if (index < fieldIndexs.size() - 2 && AddRecursion(child, dicomData, fieldIndexs))
                 {
                     return child;
                 }
@@ -53,6 +63,7 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
             {
                 QString childValue = GetFieldFunc(fieldIndexs[index + 1])(dicomData);
                 QStandardItem *item = new QStandardItem(childValue);
+                item->setData(QVariant::fromValue(m_ID), DataType::ID);
                 parent->appendRow(item);
                 if (index < fieldIndexs.size() - 2) // 倒数第二层以上才有子项
                 {
@@ -60,7 +71,7 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
                 }
                 else
                 {
-                    //最后一阶加入图像数据
+                    // 最后一阶加入图像数据
                     item->setData(QVariant::fromValue(dicomData), DataType::ImageData);
                 }
                 return item;
@@ -75,6 +86,7 @@ QStandardItem *PatientItem::AddRecursion(QStandardItem *parent, std::shared_ptr<
     {
         QString fieldValue = GetFieldFunc(fieldIndexs[0])(dicomData);
         QStandardItem *item = new QStandardItem(fieldValue);
+        item->setData(QVariant::fromValue(m_ID), DataType::ID);
 
         AddRecursion(item, dicomData, fieldIndexs);
 
@@ -147,7 +159,6 @@ std::vector<QStandardItem *> PatientItem::GenerateItems(QTreeView *treeView, int
         if (!isHandled)
         {
             QStandardItem *item = AddRecursion(nullptr, m_DicomDatas[i], fields);
-            item->setData(QVariant::fromValue(m_ID), DataType::ID);
             rootItems.push_back(item);
         }
     }
