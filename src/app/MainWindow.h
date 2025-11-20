@@ -10,6 +10,7 @@
 #include <QProgressBar>
 #include <QKeyEvent>
 #include "extension/KeyCommand.h"
+#include <QModelIndex>
 
 class MainWindow : public QMainWindow
 {
@@ -35,12 +36,13 @@ protected:
     virtual void keyPressEvent(QKeyEvent *event) override;
 
 private:
-    
     void AddProjectInfo(const std::shared_ptr<PatientItem> &patientInfo);
 
     void UpdateProjectInfo(const std::shared_ptr<PatientItem> &patientInfo);
 
     void DeleteCurrentProjectInfo();
+
+    void ClearShowData();
 
     void SetTagTableAutoResize(QTableView *tableView);
 
@@ -50,7 +52,7 @@ private:
 
     void FindBottomChildren(const QStandardItemModel &model, const QModelIndex &index, std::vector<QStandardItem *> &items);
 
-    void DeleteRecursionItem(QStandardItemModel& model, QStandardItem *item);
+    void DeleteRecursionItem(QStandardItemModel &model, QStandardItem *item);
 
     void SetTableViewData(const std::shared_ptr<DicomData> &dicomData);
 

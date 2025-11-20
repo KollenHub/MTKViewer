@@ -95,6 +95,7 @@ void MainWindow::DeleteRecursionItem(QStandardItemModel &model, QStandardItem *i
 {
     if (item->parent() == nullptr)
     {
+
         model.removeRow(item->row());
     }
     else if (item->parent()->rowCount() == 1)
@@ -424,7 +425,18 @@ void MainWindow::DeleteCurrentProjectInfo()
         // 递归删除父項
         DeleteRecursionItem(*model, item);
         Logger::info("删除项目：{}", id.toStdString());
+
+        //清除显示
+        ClearShowData();
     }
+}
+
+void MainWindow::ClearShowData()
+{
+    m_PatientTagTable->model()->removeRows(0, m_PatientTagTable->model()->rowCount());
+    m_AllTagTable->model()->removeRows(0, m_PatientTagTable->model()->rowCount());
+    vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
+    firstRenderer->RemoveAllViewProps();
 }
 
 QAction *MainWindow::FindAction(const QString &name)
