@@ -4,11 +4,13 @@ file(GLOB_RECURSE SOURCES "*.h" "*.qrc" "*.cpp" "s*.hpp" "*.ui")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     DCMTK::dcmdata
     DCMTK::dcmjpeg
     DCMTK::dcmimgle
     DCMTK::dcmimage
+    DCMTK::i2d
     KN::Core
     KN::Extension
     ${VTK_LIBRARIES}

@@ -3,6 +3,14 @@
 #include <dcmtk/dcmimgle/dcmimage.h>
 #include <dcmtk/dcmjpeg/djdecode.h>
 #include "core/Logger.h"
+#include <dcmtk\dcmdata\dctk.h>
+#include <dcmtk\dcmimgle\dcmimage.h>
+#include <dcmtk\dcmjpeg\djdecode.h>
+#include <dcmtk\dcmdata\libi2d\i2d.h>
+#include <dcmtk\ofstd\ofcmdln.h>
+#include <dcmtk\dcmdata\libi2d\i2djpgs.h>
+#include <dcmtk\dcmdata\libi2d\i2dplnsc.h>
+#include "I2DFromVtk.h"
 
 std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
 {
@@ -35,7 +43,7 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
         Logger::info("Pixel data exists");
     }
 
-    //路径赋值
+    // 路径赋值
     dcmData->SetFilePath(filePath);
 
     Uint16 rows, cols;
@@ -95,4 +103,98 @@ std::shared_ptr<DicomData> DicomOperator::OpenDicomFile(const QString &filePath)
         }
     }
     return dcmData;
+}
+
+bool DicomOperator::SavaAsDiicomFile(const QString &filePath, const std::shared_ptr<DicomData> &dicomData)
+{
+#if 1
+    // Main class for controlling conversion
+    Image2Dcm i2d;
+    // Output plugin to use (i.e. SOP class to write)
+    I2DOutputPlug *outPlug = NULL;
+    // Input plugin to use (i.e. file format to read)
+    I2DImgSource *inputPlug = NULL;
+    // Group length encoding mode for output DICOM file
+    E_GrpLenEncoding grpLengthEnc = EGL_recalcGL;
+    // Item and Sequence encoding mode for output DICOM file
+    E_EncodingType lengthEnc = EET_ExplicitLength;
+    // Padding mode for output DICOM file
+    E_PaddingEncoding padEnc = EPD_noChange;
+    // File pad length for output DICOM file
+    OFCmdUnsignedInt filepad = 0;
+    // Item pad length for output DICOM file
+    OFCmdUnsignedInt itempad = 0;
+    // Write file format (with meta header)
+    E_FileWriteMode writeMode = EWM_updateMeta;
+
+    // The transfer syntax proposed to be written by output plugin
+    E_TransferSyntax writeXfer = EXS_LittleEndianExplicit;
+
+    inputPlug = new I2DFromVtk(dicomData->GetImageData(),0); // 第0层（或其他slice）
+    outPlug = new I2DOutputPlugNewSC();
+
+    DcmDataset *resultObject = nullptr;
+    OFCondition cond = i2d.convertFirstFrame(inputPlug, outPlug, 1 /* total frames */, resultObject, writeXfer);
+
+    if (cond.good())
+    {
+        // 可插入 DICOM 标签，如 PatientName
+        resultObject->putAndInsertString(DCM_PatientName, "test");
+        DcmFileFormat dcmff(resultObject);
+        cond = dcmff.saveFile(filePath.toStdString().c_str(), writeXfer, lengthEnc, grpLengthEnc, padEnc,
+                              OFstatic_cast(Uint32, filepad), OFstatic_cast(Uint32, itempad), writeMode);
+    }
+    // update offset table if image type is encapsulated
+    if (cond.good())
+        cond = i2d.updateOffsetTable();
+
+    // update attributes related to lossy compression
+    // if (cond.good()) cond = i2d.updateLossyCompressionInfo(inputPlug, inputFiles.size(), resultObject);
+
+    resultObject->putAndInsertString(DCM_PatientName, "test");
+    if (cond.good())
+    {
+        SPDLOG_INFO(": Saving output DICOM to file " + filePath.toStdString());
+        DcmFileFormat dcmff(resultObject);
+
+        cond = dcmff.saveFile(filePath.toStdString().c_str(), writeXfer, lengthEnc, grpLengthEnc, padEnc, OFstatic_cast(Uint32, filepad), OFstatic_cast(Uint32, itempad), writeMode);
+    }
+
+    // Cleanup and return
+    delete outPlug;
+    outPlug = NULL;
+    delete inputPlug;
+    inputPlug = NULL;
+    delete resultObject;
+    resultObject = NULL;
+
+#else
+
+    DcmFileFormat fileformat;
+    DcmDataset *dataSet = fileformat.getDataset();
+
+    // cv::Mat m_image1 = cv::imread("C:\\Users\\cobot\\Pictures\\test1.jpg");
+    // cv::Mat m_image2 = cv::imread("C:\\Users\\cobot\\Pictures\\test2.jpg");
+    // int size = m_image1.rows * m_image1.cols * 3;
+    // unsigned char *data = (unsigned char *)malloc(size * 2);
+
+    // memcpy(data, m_image1.data, size);
+    // memcpy(data + size, m_image2.data, size);
+    // dataSet->putAndInsertString(DCM_NumberOfFrames, "2");
+    // dataSet->putAndInsertString(DCM_Rows, std::to_string(m_image1.rows).c_str());
+    // dataSet->putAndInsertString(DCM_Columns, std::to_string(m_image1.cols).c_str());
+
+    dataSet->putAndInsertString(DCM_SamplesPerPixel, "3");
+    dataSet->putAndInsertString(DCM_PhotometricInterpretation, "RGB");
+    dataSet->putAndInsertString(DCM_BitsAllocated, "8");
+    dataSet->putAndInsertString(DCM_BitsStored, "8");
+    dataSet->putAndInsertString(DCM_HighBit, "7");
+    dataSet->putAndInsertString(DCM_PixelRepresentation, "0");
+    dataSet->putAndInsertString(DCM_PlanarConfiguration, "0");
+
+    dataSet->putAndInsertUint8Array(DCM_PixelData, data, size * 2);
+    OFCondition status = fileformat.saveFile("test.dcm", EXS_LittleEndianExplicit);
+#endif
+
+    return false;
 }

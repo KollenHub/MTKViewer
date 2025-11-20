@@ -426,7 +426,7 @@ void MainWindow::DeleteCurrentProjectInfo()
         DeleteRecursionItem(*model, item);
         Logger::info("删除项目：{}", id.toStdString());
 
-        //清除显示
+        // 清除显示
         ClearShowData();
     }
 }
@@ -437,6 +437,7 @@ void MainWindow::ClearShowData()
     m_AllTagTable->model()->removeRows(0, m_PatientTagTable->model()->rowCount());
     vtkSmartPointer<vtkRenderer> firstRenderer = GetRenderByIndex(0);
     firstRenderer->RemoveAllViewProps();
+    m_RendererWindow->Render();
 }
 
 QAction *MainWindow::FindAction(const QString &name)
