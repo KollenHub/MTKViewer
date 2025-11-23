@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 file(GLOB_RECURSE SOURCES "*.h" "*.qrc" "*.cpp" "s*.hpp" "*.ui")
 
+
+#移除main.cpp
+list(FILTER SOURCES EXCLUDE REGEX "TestConsole\\.cpp$")
+
+message(STATUS ${SOURCES})
+
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 
@@ -25,5 +31,35 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${QT_DepExe} "$<TAR
 
 vtk_module_autoinit(
     TARGETS ${PROJECT_NAME}
+    MODULES ${VTK_LIBRARIES}
+)
+
+
+## 测试控制台程序
+
+file(GLOB_RECURSE TestSOURCES "*.h" "*.qrc" "*.cpp" "s*.hpp" "*.ui")
+
+#移除main.cpp
+list(FILTER TestSOURCES EXCLUDE REGEX "main\\.cpp$")
+
+set(APPNAME ${PROJECT_NAME}_TestCosole)
+
+add_executable(${APPNAME} ${TestSOURCES})
+
+
+target_link_libraries(${APPNAME} PRIVATE
+    DCMTK::dcmdata
+    DCMTK::dcmjpeg
+    DCMTK::dcmimgle
+    DCMTK::dcmimage
+    DCMTK::i2d
+    KN::Core
+    KN::Extension
+    ${VTK_LIBRARIES}
+)
+target_include_directories(${APPNAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+vtk_module_autoinit(
+    TARGETS ${APPNAME}
     MODULES ${VTK_LIBRARIES}
 )
