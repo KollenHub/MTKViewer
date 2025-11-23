@@ -41,7 +41,7 @@ void DicomData::AddTag(const DicomProperty &property)
 {
     m_AllTags.push_back(property);
     auto index = CPATIENTTAGS.indexOf(property.tagName());
-    Logger::debug("Tag: {} Value:{}", property.tagName().toStdString(), property.value().toStdString());
+    // Logger::debug("Tag: {} Value:{}", property.tagName().toStdString(), property.value().toStdString());
     if (index != -1)
     {
         m_PatientTags[index] = property;

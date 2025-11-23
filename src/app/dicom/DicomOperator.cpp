@@ -140,6 +140,9 @@ bool DicomOperator::SavaAsDiicomFile(const QString &filePath, const std::shared_
     {
         // 可插入 DICOM 标签，如 PatientName
         resultObject->putAndInsertString(DCM_PatientName, "test");
+
+        
+
         DcmFileFormat dcmff(resultObject);
         cond = dcmff.saveFile(filePath.toStdString().c_str(), writeXfer, lengthEnc, grpLengthEnc, padEnc,
                               OFstatic_cast(Uint32, filepad), OFstatic_cast(Uint32, itempad), writeMode);

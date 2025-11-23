@@ -12,7 +12,7 @@ private:
 
     QString m_TagName;
 
-    QString m_VRName;
+    DcmVR m_VR;
 
     QString m_XTagName;
 
@@ -42,13 +42,12 @@ public:
             return;
         }
 
-        auto vr = DcmVR(element->getVR());
+        DcmVR vr = element->getVR();
 
         m_Length = element->getLength();
         m_XTagName = tag.getXTag().toString().c_str();
         m_TagName = tag.getTagName();
-        m_VRName = vr.getVRName();
-
+        m_VR = vr;
         if (tag.isUnknownVR())
         {
             return;
@@ -68,9 +67,14 @@ public:
         return m_TagName;
     }
 
-    const QString &vrName() const
+    const QString vrName() const
     {
-        return m_VRName;
+        return m_VR.getVRName();
+    }
+
+    const DcmVR &vr() const
+    {
+        return m_VR;
     }
 
     const QString &xTagName() const
