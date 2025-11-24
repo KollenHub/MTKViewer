@@ -7,6 +7,7 @@
 #include <variant>
 #include <memory>
 #include <dcmtk/dcmdata/dcdatset.h>
+#include <QString>
 
 class DicomValue
 {
@@ -46,8 +47,12 @@ public:
     // 构造函数
     DicomValue();
 
+    DicomValue(DcmElement *element);
+
         // 添加
     OFCondition PutToDataset(DcmDataset *dataset, const DcmTagKey &tag) const;
+
+    const QString& getShowValue() const { return m_ShowValue; }
 
     // Getter方法
     ValueType getValueType() const { return m_valueType; }
@@ -81,6 +86,7 @@ public:
 private:
     ValueType m_valueType;
     std::string m_vr;
+    QString m_ShowValue;
     Value m_value;
 
     // 主提取方法

@@ -3,6 +3,7 @@
 #include <dcmtk/dcmdata/dctk.h>
 #include "core/Logger.h"
 #include "core/Timer.h"
+#include "DicomValue.h"
 class DicomProperty
 {
     friend class DicomData;
@@ -18,12 +19,12 @@ private:
 
     int m_Length;
 
-    QString m_Value;
+    DicomValue m_Value;
 
-    bool isValid() const
-    {
-        return !m_Value.isEmpty();
-    }
+    // bool isValid() const
+    // {
+    //     return !m_Value.isEmpty();
+    // }
 
     DicomProperty() = default;
 
@@ -52,14 +53,15 @@ public:
         {
             return;
         }
-        OFString value;
-        auto con = element->getOFStringArray(value);
-        if (con.good())
-        {
-            m_Value = QString::fromLocal8Bit(value.c_str());
-            if (m_Value.isEmpty())
-                m_Value = "empty value";
-        }
+        m_Value = DicomValue(element);
+        // OFString value;
+        // auto con = element->getOFStringArray(value);
+        // if (con.good())
+        // {
+        //     m_Value = QString::fromLocal8Bit(value.c_str());
+        //     if (m_Value.isEmpty())
+        //         m_Value = "empty value";
+        // }
     }
 
     const QString &tagName() const
@@ -99,11 +101,11 @@ public:
 
     const QString &value() const
     {
-        return m_Value;
+        return m_Value.getShowValue();
     }
 
     void Print() const
     {
-        Logger::info(QString("TagName: %1, VRName: %2, XTagName: %3, Length: %4, Value: %5").arg(m_TagName).arg(m_VRName).arg(m_XTagName).arg(m_Length).arg(m_Value).toStdString().c_str());
+        Logger::info(QString("TagName: %1, VRName: %2, XTagName: %3, Length: %4, Value: %5").arg(m_TagName).arg(m_Value.getVR().c_str()).arg(m_XTagName).arg(m_Length).arg(m_Value.getShowValue()).toStdString().c_str());
     }
 };

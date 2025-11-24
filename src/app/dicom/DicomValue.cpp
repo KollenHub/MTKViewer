@@ -3,6 +3,12 @@
 
 DicomValue::DicomValue() : m_valueType(UNKNOWN), m_vr("UN") {}
 
+DicomValue::DicomValue(DcmElement *element)
+{
+    ExtractValue(element);
+    m_ShowValue = QString::fromLocal8Bit(toString().c_str());
+}
+
 void DicomValue::ExtractValue(DcmElement *element)
 {
     DcmVR vr = element->getVR();
