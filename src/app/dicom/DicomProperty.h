@@ -4,6 +4,7 @@
 #include "core/Logger.h"
 #include "core/Timer.h"
 #include "DicomValue.h"
+#include <QStringList>
 class DicomProperty
 {
     friend class DicomData;
@@ -104,8 +105,67 @@ public:
         return m_Value.getShowValue();
     }
 
+    bool updateValue(const QString &value)
+    {
+        return m_Value.updateValue(value);
+    }
+
+    const DicomValue &originValue() const
+    {
+        return m_Value;
+    }
+
+    const bool AddTo(DcmDataset &dataset)
+    {
+        DcmTagKey key = GetDcmTagKey();
+        if (key.getGroup() == 0x0000 && key.getElement() == 0x0000)
+        {
+            Logger::error("DicomProperty::AddTo: Invalid tag key {}", m_XTagName.toStdString());
+            return false;
+        }
+        OFCondition con = m_Value.PutToDataset(&dataset, key);
+
+        return con.good();
+    }
+
     void Print() const
     {
         Logger::info(QString("TagName: %1, VRName: %2, XTagName: %3, Length: %4, Value: %5").arg(m_TagName).arg(m_Value.getVR().c_str()).arg(m_XTagName).arg(m_Length).arg(m_Value.getShowValue()).toStdString().c_str());
+    }
+
+    DcmTagKey GetDcmTagKey() const
+    {
+        if (m_XTagName.isEmpty())
+        {
+            return DcmTagKey(0, 0); // 返回无效标签
+        }
+
+        // XTagName 格式通常是 "(gggg,eeee) Description" 或类似
+        // 例如: "(0010,0010) Patient's Name"
+        QString xTagStr = m_XTagName;
+
+        // 方法2: 简单字符串解析
+        int start = xTagStr.indexOf('(');
+        int end = xTagStr.indexOf(')');
+
+        if (start != -1 && end != -1 && end > start)
+        {
+            QString tagPart = xTagStr.mid(start + 1, end - start - 1);
+            QStringList parts = tagPart.split(',');
+
+            if (parts.size() == 2)
+            {
+                bool ok1, ok2;
+                uint16_t group = parts[0].toUShort(&ok1, 16);
+                uint16_t element = parts[1].toUShort(&ok2, 16);
+
+                if (ok1 && ok2)
+                {
+                    return DcmTagKey(group, element);
+                }
+            }
+        }
+
+        return DcmTagKey(0, 0); // 解析失败
     }
 };

@@ -1,5 +1,6 @@
 #include "DicomValue.h"
 #include <dcmtk/dcmdata/dcsequen.h>
+#include <core/Logger.h>
 
 DicomValue::DicomValue() : m_valueType(UNKNOWN), m_vr("UN") {}
 
@@ -83,6 +84,46 @@ void DicomValue::ExtractValue(DcmElement *element)
     }
 }
 
+bool DicomValue::updateValue(const QString &value)
+{
+    try
+    {
+        switch (m_valueType)
+        {
+        case STRING:
+            m_value = value.toStdString();
+            break;
+        case INT16:
+            m_value = value.toInt();
+            break;
+        case INT32:
+            m_value = value.toInt();
+            break;
+        case UINT16:
+            m_value = value.toUInt();
+            break;
+        case UINT32:
+            m_value = value.toUInt();
+            break;
+        case FLOAT:
+            m_value = value.toFloat();
+            break;
+        case DOUBLE:
+            m_value = value.toDouble();
+            break;
+        case ATTRIBUTE_TAG:
+            m_value = value.toStdString();
+            break;
+        default:
+            return false;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        Logger::error("DicomValue::updateValue: {}", e.what());
+        return false;
+    }
+}
 std::string DicomValue::toString() const
 {
     if (auto ptr = std::get_if<StringValue>(&m_value))

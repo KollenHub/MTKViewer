@@ -130,7 +130,7 @@ bool DicomOperator::SavaAsDiicomFile(const QString &filePath, const std::shared_
     // The transfer syntax proposed to be written by output plugin
     E_TransferSyntax writeXfer = EXS_LittleEndianExplicit;
 
-    inputPlug = new I2DFromVtk(dicomData->GetImageData(),0); // 第0层（或其他slice）
+    inputPlug = new I2DFromVtk(dicomData->GetImageData(), 0); // 第0层（或其他slice）
     outPlug = new I2DOutputPlugNewSC();
 
     DcmDataset *resultObject = nullptr;
@@ -138,10 +138,22 @@ bool DicomOperator::SavaAsDiicomFile(const QString &filePath, const std::shared_
 
     if (cond.good())
     {
-        // 可插入 DICOM 标签，如 PatientName
-        resultObject->putAndInsertString(DCM_PatientName, "test");
+        // 插入记录的数据
+        int tagSize = dicomData->GetAllTags().size();
 
-        
+        size_t start = 96;
+        size_t end = 98;
+
+        Logger::warn("start:{} end:{}", start, end);
+
+        for (size_t i = 0; i < tagSize; i++)
+        {
+             if (i >= start && i <= end)
+                 continue;
+            auto tag = dicomData->GetAllTags().at(i);
+            Logger::info("tag:{}--->{}", tag.tagName().toStdString(), tag.originValue().toString());
+            tag.AddTo(*resultObject);
+        }
 
         DcmFileFormat dcmff(resultObject);
         cond = dcmff.saveFile(filePath.toStdString().c_str(), writeXfer, lengthEnc, grpLengthEnc, padEnc,
@@ -154,7 +166,8 @@ bool DicomOperator::SavaAsDiicomFile(const QString &filePath, const std::shared_
     // update attributes related to lossy compression
     // if (cond.good()) cond = i2d.updateLossyCompressionInfo(inputPlug, inputFiles.size(), resultObject);
 
-    resultObject->putAndInsertString(DCM_PatientName, "test");
+    // resultObject->putAndInsertString(DCM_PatientName, "test");
+
     if (cond.good())
     {
         SPDLOG_INFO(": Saving output DICOM to file " + filePath.toStdString());

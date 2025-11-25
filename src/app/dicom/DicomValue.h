@@ -49,10 +49,10 @@ public:
 
     DicomValue(DcmElement *element);
 
-        // 添加
+    // 添加
     OFCondition PutToDataset(DcmDataset *dataset, const DcmTagKey &tag) const;
 
-    const QString& getShowValue() const { return m_ShowValue; }
+    const QString &getShowValue() const { return m_ShowValue; }
 
     // Getter方法
     ValueType getValueType() const { return m_valueType; }
@@ -70,6 +70,9 @@ public:
         }
         return false;
     }
+
+    bool updateValue(const QString &value);
+    
 
     // 便捷方法
     std::string toString() const;
