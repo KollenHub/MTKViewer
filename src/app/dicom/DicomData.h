@@ -39,18 +39,17 @@ private:
     QString m_FileName;
 
 public:
+    const QString &PatientName() const;
 
-    const QString& PatientName() const;
+    const QString &StudyModality() const;
 
-    const QString& StudyModality() const;
+    const QString &SeriesDescription() const;
 
-    const QString& SeriesDescription() const;
+    const QString &PatientSex() const;
 
-    const QString& PatientSex() const;
+    const QString &FilePath() const;
 
-    const QString& FilePath() const;
-
-    const QString& FileName() const;
+    const QString &FileName() const;
 
     void SetFilePath(const QString &filePath);
 
@@ -64,13 +63,12 @@ public:
 
     const std::vector<DicomProperty> &GetPatientTags() const;
 
-    const std::vector<DicomProperty> &GetAllTags() const;
+    std::vector<DicomProperty> &GetAllTags();
 
     void Print() const;
 
     ~DicomData();
 };
-
 
 // 注册两种类型
 Q_DECLARE_METATYPE(DicomData)

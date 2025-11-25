@@ -141,17 +141,20 @@ bool DicomOperator::SavaAsDiicomFile(const QString &filePath, const std::shared_
         // 插入记录的数据
         int tagSize = dicomData->GetAllTags().size();
 
-        size_t start = 96;
-        size_t end = 98;
-
-        Logger::warn("start:{} end:{}", start, end);
-
         for (size_t i = 0; i < tagSize; i++)
         {
-             if (i >= start && i <= end)
-                 continue;
             auto tag = dicomData->GetAllTags().at(i);
-            Logger::info("tag:{}--->{}", tag.tagName().toStdString(), tag.originValue().toString());
+
+            //读取时按照8位读取的，所以存的时候不能按照原来的数据存储进去
+            if (tag.tagName() == "BitsAllocated" || tag.tagName() == "BitsStored" || tag.tagName() == "HighBit")
+            {
+                continue;
+            }
+            if (tag.tagName() == "PresentationLUTShape")
+            {
+                Logger::debug("tag:{}--->{}", tag.tagName().toStdString(), tag.originValue().toString());
+                continue;
+            }
             tag.AddTo(*resultObject);
         }
 

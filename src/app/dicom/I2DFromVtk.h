@@ -19,9 +19,10 @@ class I2DFromVtk : public I2DImgSource
 {
 public:
     // 构造：传入指向 vtkImageData 的指针（不负责释放），可指定要读取的 z 切片 index（默认 0）
-    I2DFromVtk(vtkImageData* img, int sliceIndex = 0)
-      : m_img(img), m_slice(sliceIndex)
-    {}
+    I2DFromVtk(vtkImageData *img, int sliceIndex = 0)
+        : m_img(img), m_slice(sliceIndex)
+    {
+    }
 
     virtual ~I2DFromVtk() override {}
 
@@ -34,12 +35,12 @@ public:
     // 如果源是有损压缩图像（通常内存图像不是），可在这里返回 true 并设置方法名
     virtual OFCondition getLossyComprInfo(OFBool &srcEncodingLossy, OFString &srcLossyComprMethod) const override
     {
-        srcEncodingLossy = OFFalse;          // 内存 vtk 图像通常不是压缩的
+        srcEncodingLossy = OFFalse; // 内存 vtk 图像通常不是压缩的
         srcLossyComprMethod.clear();
         return EC_Normal;
     }
 
-    /* 
+    /*
      * 关键函数：将像素数据和图像参数返回给 DCMTK
      *
      * 参数（按 DCMTK i2d 要求）：
@@ -69,22 +70,27 @@ public:
         Uint32 &length,
         E_TransferSyntax &ts) override
     {
-        if (!m_img) return EC_IllegalCall;
+        if (!m_img)
+            return EC_IllegalCall;
 
         // 获取尺寸
-        int dims[3] = {0,0,0};
+        int dims[3] = {0, 0, 0};
         m_img->GetDimensions(dims); // dims: [nx, ny, nz]
         int nx = dims[0], ny = dims[1], nz = dims[2];
-        if (nx <= 0 || ny <= 0) return EC_IllegalCall;
-        if (m_slice < 0 || m_slice >= nz) return EC_IllegalCall;
+        if (nx <= 0 || ny <= 0)
+            return EC_IllegalCall;
+        if (m_slice < 0 || m_slice >= nz)
+            return EC_IllegalCall;
 
         // 通道数与数据类型
         int comps = m_img->GetNumberOfScalarComponents();
         int vtkType = m_img->GetScalarType(); // VTK_UNSIGNED_CHAR, VTK_UNSIGNED_SHORT, ...
 
-        // 我们当前只实现 8-bit unsigned（VTK_UNSIGNED_CHAR）
-        if (vtkType != VTK_UNSIGNED_CHAR) {
-            std::cerr << "I2DFromVtk: 目前只支持 VTK_UNSIGNED_CHAR（8bit），请先转换数据或扩展实现\n";
+        // TODO:这里读取8bit是因为读取的数据也是按照 8 bit读的，现在兼容高位效果不好暂时不处理
+        //  我们当前只实现 8-bit unsigned（VTK_UNSIGNED_CHAR）
+        if (vtkType != VTK_UNSIGNED_CHAR)
+        {
+            Logger::error("I2DFromVtk: 目前只支持 VTK_UNSIGNED_CHAR（8bit），请先转换数据或扩展实现");
             return EC_IllegalParameter;
         }
 
@@ -93,10 +99,13 @@ public:
         cols = static_cast<Uint16>(nx);
         samplesPerPixel = static_cast<Uint16>(comps);
 
-        if (samplesPerPixel == 1) photoMetrInt = "MONOCHROME2";
-        else if (samplesPerPixel == 3) photoMetrInt = "RGB";
-        else {
-            std::cerr << "I2DFromVtk: 不支持的通道数: " << comps << "\n";
+        if (samplesPerPixel == 1)
+            photoMetrInt = "MONOCHROME2";
+        else if (samplesPerPixel == 3)
+            photoMetrInt = "RGB";
+        else
+        {
+            Logger::error("I2DFromVtk: 不支持的通道数:{}", comps);
             return EC_IllegalParameter;
         }
 
@@ -112,26 +121,31 @@ public:
         pixAspectV = 1;
 
         // 计算字节大小并分配（注意使用 new[]，DCMTK i2d 期望释放）
-        size_t bufBytes = static_cast<size_t>(rows) * static_cast<size_t>(cols) * static_cast<size_t>(samplesPerPixel) * (bitsAlloc/8);
-        try {
+        size_t bufBytes = static_cast<size_t>(rows) * static_cast<size_t>(cols) * static_cast<size_t>(samplesPerPixel) * (bitsAlloc / 8);
+        try
+        {
             pixData = new char[bufBytes];
-        } catch (const std::bad_alloc&) {
+        }
+        catch (const std::bad_alloc &)
+        {
             pixData = nullptr;
             return EC_MemoryExhausted;
         }
 
         // 获取 vtk 指针到指定切片并逐行复制（更稳健）
-        void* slicePtr = m_img->GetScalarPointer(0, 0, m_slice);
-        if (!slicePtr) {
+        void *slicePtr = m_img->GetScalarPointer(0, 0, m_slice);
+        if (!slicePtr)
+        {
             delete[] pixData;
             pixData = nullptr;
             return EC_IllegalCall;
         }
 
-        unsigned char* srcBase = static_cast<unsigned char*>(slicePtr);
-        size_t rowBytes = static_cast<size_t>(cols) * static_cast<size_t>(samplesPerPixel) * (bitsAlloc/8);
-        for (int y = 0; y < ny; ++y) {
-            size_t srcOffset = static_cast<size_t>(y) * static_cast<size_t>(nx) * static_cast<size_t>(samplesPerPixel) * (bitsAlloc/8);
+        unsigned char *srcBase = static_cast<unsigned char *>(slicePtr);
+        size_t rowBytes = static_cast<size_t>(cols) * static_cast<size_t>(samplesPerPixel) * (bitsAlloc / 8);
+        for (int y = 0; y < ny; ++y)
+        {
+            size_t srcOffset = static_cast<size_t>(y) * static_cast<size_t>(nx) * static_cast<size_t>(samplesPerPixel) * (bitsAlloc / 8);
             std::memcpy(pixData + static_cast<size_t>(y) * rowBytes, srcBase + srcOffset, rowBytes);
         }
 
@@ -144,6 +158,6 @@ public:
     }
 
 private:
-    vtkImageData* m_img; // 不在类内管理生命周期，调用者负责保证有效
+    vtkImageData *m_img; // 不在类内管理生命周期，调用者负责保证有效
     int m_slice;
 };

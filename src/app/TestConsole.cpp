@@ -5,13 +5,13 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    std::shared_ptr<DicomData> data = DicomOperator::OpenDicomFile("E:/DICOM/DCM/011958333339.dcm");
+    std::shared_ptr<DicomData> data = DicomOperator::OpenDicomFile("D:/DICOM/DCM/011958333339.dcm");
 
-    auto datas = data->GetAllTags();
+    auto& datas = data->GetAllTags();
 
     for (size_t i = 0; i < datas.size(); i++)
     {
-        auto item = datas[i];
+        auto& item = datas[i];
         if (item.tagName() == "Modality")
         {
             item.updateValue("CT");
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    bool result = DicomOperator::SavaAsDiicomFile("E:/DICOM/DCM/Test.dcm", data);
+    bool result = DicomOperator::SavaAsDiicomFile("D:/DICOM/DCM/Test.dcm", data);
 
     std::cout << "Result: " << result << std::endl;
 

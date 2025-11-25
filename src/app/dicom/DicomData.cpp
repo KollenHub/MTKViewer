@@ -71,7 +71,7 @@ void DicomData::setImage(DcmDataset *dataset)
     std::cout << "depth(bits): " << image.getDepth() << std::endl;
     std::cout << "channels: " << numComponents << std::endl;
 
-    // 取 8bit 像素数据
+    // 取 8bit 像素数据(这个有可能是高位来的，取出效果觉得不好，暂时用8位)
     const void *pixelData = image.getOutputData(8 /* bits per sample */, 0 /* frame */);
     if (!pixelData)
     {
@@ -99,7 +99,7 @@ const std::vector<DicomProperty> &DicomData::GetPatientTags() const
     return m_PatientTags;
 }
 
-const std::vector<DicomProperty> &DicomData::GetAllTags() const
+std::vector<DicomProperty> &DicomData::GetAllTags() 
 {
     return m_AllTags;
 }
